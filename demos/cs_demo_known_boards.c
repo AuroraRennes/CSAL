@@ -579,6 +579,130 @@ static int do_registration_axx5500(struct cs_devices_t *devices)
     return 0;
 }
 
+static int do_registration_zcu104(struct cs_devices_t *devices)
+{
+  enum { A53_0, A53_1, A53_2, A53_3 };
+
+  int i;
+  cs_device_t funnel_a53, funnel_major, etf1, etf2, rep, etr, tpiu, stm, sys_cti;
+
+  if (registration_verbose)
+    printf("CSDEMO: Registering ZCU104 CoreSight Devices...\n");
+
+  /* cs_register_romtable(0xFE800000); */
+  cs_register_romtable(0xFEC00000);
+
+  if (registration_verbose)
+    printf("CSDEMO: Registering CPU Affinities...\n");
+
+  /* CTI affinities */
+  cs_device_set_affinity(cs_device_register(0xFEC20000), A53_0);
+  cs_device_set_affinity(cs_device_register(0xFED20000), A53_1);
+  cs_device_set_affinity(cs_device_register(0xFEE20000), A53_2);
+  cs_device_set_affinity(cs_device_register(0xFEF20000), A53_3);
+
+  /* PMU affinities */
+  cs_device_set_affinity(cs_device_register(0xFEC30000), A53_0);
+  cs_device_set_affinity(cs_device_register(0xFED30000), A53_1);
+  cs_device_set_affinity(cs_device_register(0xFEE30000), A53_2);
+  cs_device_set_affinity(cs_device_register(0xFEF30000), A53_3);
+
+  /* ETM affinities */
+  cs_device_set_affinity(cs_device_register(0xFEC40000), A53_0);
+  cs_device_set_affinity(cs_device_register(0xFED40000), A53_1);
+  cs_device_set_affinity(cs_device_register(0xFEE40000), A53_2);
+  cs_device_set_affinity(cs_device_register(0xFEF40000), A53_3);
+
+  if (registration_verbose)
+    printf("CSDEMO: Registering trace-bus connections...\n");
+
+  funnel_a53 = cs_device_get(0xFE920000);
+  cs_atb_register(cs_cpu_get_device(A53_0, CS_DEVCLASS_SOURCE), 0,
+                  funnel_a53, 0);
+  cs_atb_register(cs_cpu_get_device(A53_1, CS_DEVCLASS_SOURCE), 0,
+                  funnel_a53, 1);
+  cs_atb_register(cs_cpu_get_device(A53_2, CS_DEVCLASS_SOURCE), 0,
+                  funnel_a53, 2);
+  cs_atb_register(cs_cpu_get_device(A53_3, CS_DEVCLASS_SOURCE), 0,
+                  funnel_a53, 3);
+
+  funnel_major = cs_device_get(0xFE930000);
+  etf1 = cs_device_get(0xFE940000);
+  etf2 = cs_device_get(0xFE950000);
+  rep = cs_device_get(0xFE960000);
+  etr = cs_device_get(0xFE970000);
+  tpiu = cs_device_get(0xFE980000);
+  stm = cs_device_get(0xFE9C0000);
+
+  cs_atb_register(funnel_a53, 0, etf1, 0);
+  cs_atb_register(etf1, 0, funnel_major, 2);
+  /* cs_atb_register(stm, 0, funnel_major, 3); */
+
+  cs_atb_register(funnel_major, 0, etf2, 0);
+  cs_atb_register(etf2, 0, rep, 0);
+  cs_atb_register(rep, 0, etr, 0);
+  cs_atb_register(rep, 1, tpiu, 0);
+
+  devices->itm = stm;
+#if 0
+  devices->etb = etf;
+  devices->trace_sinks[0] = etr;
+#else
+  devices->etb = etr;
+  devices->trace_sinks[0] = etf1;
+#endif
+
+  /*
+  cs_stm_config_master(stm, 0, 0x71000000);
+  cs_stm_select_master(stm, 0);
+  */
+
+  /* etf */
+  sys_cti = cs_device_register(0xFE990000);
+  cs_cti_connect_trigsrc(etf1, CS_TRIGOUT_ETB_FULL,
+      cs_cti_trigsrc(sys_cti, 0));
+  cs_cti_connect_trigsrc(etf1, CS_TRIGOUT_ETB_ACQCOMP,
+      cs_cti_trigsrc(sys_cti, 1));
+  cs_cti_connect_trigsrc(etf2, CS_TRIGOUT_ETB_FULL,
+      cs_cti_trigsrc(sys_cti, 2));
+  cs_cti_connect_trigsrc(etf2, CS_TRIGOUT_ETB_ACQCOMP,
+      cs_cti_trigsrc(sys_cti, 3));
+  cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 1),
+      etf1, CS_TRIGIN_ETB_TRIGIN);
+  cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 0),
+      etf1, CS_TRIGIN_ETB_FLUSHIN);
+  cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 3),
+      etf2, CS_TRIGIN_ETB_TRIGIN);
+  cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 2),
+      etf2, CS_TRIGIN_ETB_FLUSHIN);
+
+  /* etr */
+  cs_cti_connect_trigsrc(etr, CS_TRIGOUT_ETB_FULL,
+      cs_cti_trigsrc(sys_cti, 4));
+  cs_cti_connect_trigsrc(etr, CS_TRIGOUT_ETB_ACQCOMP,
+      cs_cti_trigsrc(sys_cti, 5));
+  cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 5),
+      etr, CS_TRIGIN_ETB_TRIGIN);
+  cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 4),
+      etr, CS_TRIGIN_ETB_FLUSHIN);
+
+  /* stm */
+  cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_ASYNCOUT,
+      cs_cti_trigsrc(sys_cti, 7));
+  cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_TRIGOUTSPTE,
+      cs_cti_trigsrc(sys_cti, 4));
+  cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_TRIGOUTSW,
+      cs_cti_trigsrc(sys_cti, 5));
+  cs_cti_connect_trigsrc(stm, CS_TRIGOUT_STM_TRIGOUTHETE,
+      cs_cti_trigsrc(sys_cti, 6));
+
+  for (i = 0; i < 4; i++) {
+    devices->cpu_id[i] = cpu_id[i];
+  }
+
+  return 0;
+}
+
 static int do_registration_jetson_nano(struct cs_devices_t *devices)
 {
   enum { A57_0, A57_1, A57_2, A57_3 };
@@ -687,6 +811,7 @@ static int do_registration_jetson_nano(struct cs_devices_t *devices)
 
   return 0;
 }
+
 
 static int do_registration_jetsontx2(struct cs_devices_t *devices)
 {
@@ -851,6 +976,10 @@ const struct board known_boards[] = {
         .do_registration = do_registration_jetsontx2,
         .n_cpu = 4,
         .hardware = "Jetson TX2",
+    }, {
+        .do_registration = do_registration_zcu104,
+        .n_cpu = 4,
+        .hardware = "ZCU104",
     },
     {}
 };
