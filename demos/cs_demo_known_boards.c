@@ -589,8 +589,8 @@ static int do_registration_zcu104(struct cs_devices_t *devices)
   if (registration_verbose)
     printf("CSDEMO: Registering ZCU104 CoreSight Devices...\n");
 
-  /* cs_register_romtable(0xFE800000); */
-  cs_register_romtable(0xFEC00000);
+  cs_exclude_range(0xFE9E0000, 0xFEC00000);	/* exclude the Cortex-R5 */
+  cs_register_romtable(0xFE800000);
 
   if (registration_verbose)
     printf("CSDEMO: Registering CPU Affinities...\n");
