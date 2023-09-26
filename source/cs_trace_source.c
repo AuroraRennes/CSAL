@@ -60,6 +60,8 @@ int _cs_path_enable(struct cs_device *d, int enabled)
                 }
                 /* Scan the replicator's out-ports in case they are funnel inputs */
                 _cs_path_enable(od, enabled);
+	    } else {
+                _cs_path_enable(od, enabled);
             }
         }
     }

@@ -236,6 +236,57 @@ int cs_sink_disable(cs_device_t dev)
     }
 }
 
+int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
+{
+  unsigned int flfmt;
+  struct cs_device *d = DEV(dev);
+
+  assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER) && 
+         cs_device_has_class(dev, CS_DEVCLASS_SINK)   && 
+         cs_device_has_class(dev, CS_DEVCLASS_LINK));
+  assert(d -> v.etb.is_tmc_device);
+  assert(d->type == DEV_ETF);
+  
+  _cs_unlock(d);
+  d->v.etb.currently_reading = 0;
+  if (_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+    return 0;
+  }
+  /* Wait until TMCReady is equal, indicating that the previous trace session is over. */
+  _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  _cs_write(d, CS_TMC_MODE, CS_TMC_MODE_HWFIFO);
+  /* Set up flushing and formatting controls.
+        CS_ETB_FLFMT_CTRL_EnFTC: enable formatting into 16-byte frames,
+            in case there are multiple trace sources.
+        CS_ETB_FLFMT_CTRL_EnFCont: enable insertion of triggers (TMC)
+  */
+  flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont;
+  _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
+  _cs_write(d, CS_TMC_BUFWM, bufwm);
+
+  return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+}
+
+int cs_tmc_hw_fifo_disable(cs_device_t dev){
+  struct cs_device *d = DEV(dev);
+
+  assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER) && 
+         cs_device_has_class(dev, CS_DEVCLASS_SINK)   && 
+         cs_device_has_class(dev, CS_DEVCLASS_LINK));
+  assert(d -> v.etb.is_tmc_device);
+  assert(d->type == DEV_ETF);
+
+  _cs_unlock(d);
+  /* Set to stop on flush event. */
+  _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
+  /* Flush the trace data remaining in fifo. */
+  _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+  /* Now in Stopping: Wait until TMCReady is equal to one. This indicates that the trace session is over. */
+  _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  /* "Disable trace capture" by unsetting TraceCaptEn */
+  return _cs_write(d, CS_ETB_CTRL, 0x0);
+}
+
 int cs_disable_tpiu(void)
 {
     int rc = 0;
