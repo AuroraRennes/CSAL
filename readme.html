@@ -1,0 +1,120 @@
+<html xmlns:fn="http://www.w3.org/2005/xpath-functions">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>CoreSight Access Library</title>
+<style type="text/css">
+    body { font-size: 62.5%;    /* default 1.0em = 16px, so 62.5% of 16 = 10. Therefore, 1.0em now = 10px, 1.2em now = 12px etc. */
+        font-family: Verdana, Arial, "Lucida Grande", sans-serif; margin: 10px; padding: 0; background: #fff; min-width: 999px; }
+    /* Content Styling */
+    .para { font-size: 1.2em; margin-bottom: 0px; margin-top: 10px; }
+    p { font-size: 1.2em; margin-bottom: 0px; margin-top: 10px; }
+    h1 { font-size: 1.6em; color: #025066; margin-top: 0px; margin-bottom: 0px; }
+    h2 { font-size: 1.4em; font-weight: bold; color: #025066; margin-bottom: 0px; }
+    h3 { font-size: 1.2em; font-weight: bold; color: #025066; margin-bottom: 0px; }
+    a { color: #127490; }
+    a:hover { color: #014153; }
+    div.indent { margin-left:10px; margin-right: 10px; margin-bottom: 0px; margin-top: 10px; }
+    div.note { font-size: 1.0em; margin-left:10px; margin-right: 10px; margin-bottom: 0px; margin-top: 10px; }
+    .table { margin-top: 5px; margin-bottom: 5px; padding:0px; }
+    ul li { font-size: 1.0em; list-style-image: url(images/bullet_blue.png); }
+    div.toc ul li { font-size: 1.0em; list-style-image: url(images/bullet_blue.png); }
+    .table-cell { font-size: 75%; }
+    .image { margin-top: 5px; margin-bottom: 5px; padding:0px; }
+    .note { margin-bottom: 15px; background: #E0E0E0 }
+    .toc { font-size: 115%; margin-left: 20px; margin-top: 10px; margin-bottom: 15px; }
+    .italic { font-style: italic; }
+    .bold { font-weight: bold; }
+    .emphasis { font-weight: bold; font-style: italic; }
+    .underline { text-decoration: underline; }
+    .bold-underline { text-decoration: underline; font-weight: bold; }
+    .arg { font-family: 'Lucida Sans Typewriter', 'Courier New', Courier, monospace; color:#333399; }
+    .repl { font-style: italic; }
+    .code { font-size: 1.2em; margin-top: 2px; margin-left: 20px; margin-bottom: 2px; color: #333399;
+       font-family: 'Lucida Sans Typewriter', 'Courier New', Courier, monospace; }
+    .menu { font-weight: bold; }
+    .interface { font-weight: bold; }
+    ul {margin-top: 2px; margin-bottom: 5px; }
+    ol {list-style-type:decimal; margin-top: 2px; margin-bottom: 5px; }
+    ol ol {list-style-type:lower-alpha; margin-top: 2px; margin-bottom: 5px; }
+    ol ol ol {list-style-type:lower-roman; margin-top: 2px; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    
+    <a name="CoreSight%20Access%20Library"></a><h1>CoreSight Access Library - ARM®DS-5™</h1>
+    <div class="toc">
+<b>Table of Contents:</b><ul>
+<li><a href="#Purpose%20and%20scope">Purpose and scope</a></li>
+<li><a href="#Getting%20Started%20with%20the%20Library.">Getting Started with the Library.</a></li>
+<li><a href="#Create%20the%20API%20Documentation.">Create the API Documentation.</a></li>
+</ul>
+</div>
+    
+        <div class="para">The CoreSight Access Library provides an API to enable user code to interact directly with CoreSight trace devices on your target.</div>
+    
+
+    <div class="indent">
+        <a name="Purpose%20and%20scope"></a><h2>Purpose and scope</h2>
+      <div class="para">The CoreSight Access Library API enables directly programmable access with CoreSight devices on your target.  This allows, for example, program execution trace to be captured in a production system without the need to have an external debugger connected.  The saved trace can be retrieved later and loaded into DS-5 Debugger for analysis.</div>
+      <div class="para">
+        The library supports a number of different CoreSight components on several target boards as described in the <span class="arg">readme.md</span> file.  You can modify the library it to support other CoreSight components and/or boards.
+      </div>
+      <div class="para">An example Linux application ("<span class="arg">tracedemo</span>") that exercises the library is provided.  As it runs, <span class="arg">tracedemo</span> creates several files on the target, including the captured trace.  Ready-made example capture files are provided that can be loaded into DS-5 Debugger.</div>
+      
+    </div>
+
+  <div class="indent">
+    <a name="Getting%20Started%20with%20the%20Library."></a><h2>Getting Started with the Library.</h2>
+    <div class="para">The sources are provided in <span class="arg">[DS-5 install dir]\examples\CoreSight_Access_Library.zip</span>.</div>
+    <div class="para">Either import the example into the DS-5 Eclipse workspace, or unpack to a suitable location.</div>
+    <div class="para">See the following <span class="arg"><span class="bold">readme*</span></span> text files for further information: </div>
+    <ul>
+      <li>
+        <div class="para">
+          <span class="arg">./readme.md</span>:-
+        </div> 
+        <div class="para">
+          A text file in library root directory. Contains information on supported CoreSight components, documentation and building and using the library.
+        </div>
+        <div class="para"> This file also contains the latest version information for the library and API additions and changes.</div>
+      </li>
+      <li>
+        <div class="para">
+          <span class="arg">./build/readme_buildlib.md</span>:-
+        </div>
+        <div class="para">
+          A text file containing information for building the library.
+        </div>
+      </li>
+      <li>
+        <div class="para">
+          <span class="arg">./demos/readme_demos.md</span>:-
+        </div>
+        <div class="para">
+          A text file containing step by step guide for building and executing the demos, and collecting the resulting trace in DS-5 Debugger.
+        </div>
+      </li>
+    </ul>
+  </div>
+
+    <div class="indent">
+        <a name="Create%20the%20API%20Documentation."></a><h2>Create the API Documentation.</h2>
+      <div class="para">To create the API documentation, you need to have installed <span class="bold">Doxygen</span>.  Then run:</div>
+      <div class="para">
+        <span class="arg">doxygen ./doxygen-cfg.txt</span>
+      </div>
+      <div class="para">The resulting API documentation can then be found in <span class="arg">./doc/html.</span>
+</div>
+      <div class="para">This documentation also contains all the information found in the <span class="arg"><span class="bold">readme*.md</span></span> text files. </div>
+    </div>
+
+    <h2>See also:</h2>
+<div class="indent"><ul>
+        <li><div class="para"><a href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0446-/deb1358797902966.html"><i>Configuring and connecting to a target </i> in <i>DS-5 Debugger User Guide</i></a></div></li>
+        <li><div class="para"><a href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0446-/index.html"><i>DS-5 Debugger User Guide</i></a></div></li>
+        <li><div class="para"><a href="http://infocenter.arm.com/help/topic/com.arm.doc.dui0452-/index.html"><i>DS-5 Debugger Command Reference</i></a></div></li>
+    </ul></div>
+<br><br><div align="left" class="legal">
+<hr>Copyright© 2010-2016 ARM Limited. All Rights Reserved.</div>
+</body>
+</html>

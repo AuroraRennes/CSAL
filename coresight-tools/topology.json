@@ -1,0 +1,93 @@
+{
+    "devices": [
+        {
+            "address": "0x87a08fc30000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08fcb0000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08fd30000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08fdb0000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08fe30000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08feb0000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08ff30000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        },
+        {
+            "address": "0x87a08ffb0000",
+            "type": [
+                3,
+                1
+            ],
+            "architecture": [
+                "ETM",
+                4
+            ]
+        }
+    ],
+    "links": []
+}
