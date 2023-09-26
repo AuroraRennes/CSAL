@@ -21,40 +21,39 @@
 #define _included_cs_pmu_h
 
 /**
-   \defgroup pmu PMU
+\defgroup pmu PMU
 
-   Memory-mapped access to CPU PMUs.
+Memory-mapped access to CPU PMUs.
 
-   Access via this interface may conflict with other PMU usage,
-   e.g. via the Linux perf subsystem or external profilers.
+Access via this interface may conflict with other PMU usage,
+e.g. via the Linux perf subsystem or external profilers.
 
-   @{
+@{
 */
 
 
 typedef unsigned int cs_pmu_mask_t;   /**< Mask of counters, including cycle counter */
-#define CS_PMU_MASK_CYCLES ((cs_pmu_mask_t)0x80000000)	 /**< Mask bit for cycle counter */
+#define CS_PMU_MASK_CYCLES ((cs_pmu_mask_t)0x80000000)   /**< Mask bit for cycle counter */
 
 /**
-   Get the number of counters (exclusive of the cycle counter)
-   supported by a CPU PMU.
+Get the number of counters (exclusive of the cycle counter)
+supported by a CPU PMU.
 */
 int cs_pmu_n_counters(cs_device_t);
 
 /**
-   Read CPU PMU event counts (under mask) and/or the cycle counter.
-   The cycle-counter bit (0x80000000 / CS_PMU_MASK_CYCLES) is ignored if in the mask.
-   Note that the event counts are read into a packed array, starting from the
-   lowest numbered selected counter.
+Read CPU PMU event counts (under mask) and/or the cycle counter.
+The cycle-counter bit (0x80000000 / CS_PMU_MASK_CYCLES) is ignored if in the mask.
+Note that the event counts are read into a packed array, starting from the
+lowest numbered selected counter.
 
-   Any overflow bits in selected counters will be reset.
-   This allows you to maintain (in your own code) higher order bits
-   of a counter, and use the overflow bits to increment them,
-   as long as you take samples reasonably frequently (i.e. several times a second).
+Any overflow bits in selected counters will be reset.
+This allows you to maintain (in your own code) higher order bits
+of a counter, and use the overflow bits to increment them,
+as long as you take samples reasonably frequently (i.e. several times a second).
 */
 int cs_pmu_get_counts(cs_device_t, cs_pmu_mask_t mask,
-		      unsigned int *cycles, unsigned int *counts,
-		      cs_pmu_mask_t * overflow);
+                      unsigned int *cycles, unsigned int *counts, cs_pmu_mask_t *overflow);
 
 
 /**
@@ -64,25 +63,66 @@ int cs_pmu_get_counts(cs_device_t, cs_pmu_mask_t mask,
  *  against newer versions of the API.
  */
 typedef struct cs_pmu {
-    unsigned int version;    /**< Version field - for future expansion */
-    unsigned int div64:1;    /**< Cycle counter divide-by-64 */
-    unsigned int cycles;     /**< Cycle counter */
-    cs_pmu_mask_t overflow;  /**< Overflow flags for event counters and cycle counter */
-    cs_pmu_mask_t mask;	     /**< Mask of counts/events to program/read */
-    unsigned int counts[31];	 /**< Event counts */
-    unsigned int eventtypes[31]; /**< Event types */
+  unsigned int version;    /**< Version field - for future expansion */
+  unsigned int div64:1;    /**< Cycle counter divide-by-64 */
+  unsigned int cycles;     /**< Cycle counter */
+  cs_pmu_mask_t overflow;  /**< Overflow flags for event counters and cycle counter */
+  cs_pmu_mask_t mask;      /**< Mask of counts/events to program/read */
+  unsigned int counts[31];     /**< Event counts */
+  unsigned int eventtypes[31]; /**< Event types */
 } cs_pmu_t;
 
-#define CS_PMU_VERSION_1   0x01	   /**< Version 1 of the structure */
+#define CS_PMU_VERSION_1   0x01    /**< Version 1 of the structure */
 
 
-#define CS_PMU_CYCLES      0x01	   /**< Select the cycle counter */
-#define CS_PMU_OVERFLOW    0x02	   /**< Select the overflow flags */
-#define CS_PMU_COUNTS      0x04	   /**< Select the event counts */
-#define CS_PMU_EVENTTYPES  0x08	   /**< Select the event types */
-#define CS_PMU_DIV64       0x10	   /**< Select the divide-by-64 flag */
-#define CS_PMU_ENABLE      0x20	   /**< Enable the PMU when done */
-#define CS_PMU_DISABLE     0x40	   /**< Disable the PMU when done (or temporarily) */
+#define CS_PMU_CYCLES      0x01    /**< Select the cycle counter */
+#define CS_PMU_OVERFLOW    0x02    /**< Select the overflow flags */
+#define CS_PMU_COUNTS      0x04    /**< Select the event counts */
+#define CS_PMU_EVENTTYPES  0x08    /**< Select the event types */
+#define CS_PMU_DIV64       0x10    /**< Select the divide-by-64 flag */
+#define CS_PMU_ENABLE      0x20    /**< Enable the PMU when done */
+#define CS_PMU_DISABLE     0x40    /**< Disable the PMU when done (or temporarily) */
+
+
+
+
+/*  
+    ALl PMU event bus IDs (from ARM TRM for Cortex-A53 processor) 
+    -- Matthew Weingarten
+*/
+#define L1D_CACHE_ALLOCATE      0x1F /*Not implemented in A53*/
+#define CHAIN                   0x1E 
+#define BUS_CYCLES              0x1D 
+#define TTBR_WRITE_RETIRED      0x1C /*Not implemented in A53*/
+#define INST_SPEC               0x1B /*Not implemented in A53*/ 
+#define MEMORY_ERROR            0x1A 
+#define BUS_ACCESS              0x19 
+#define L2D_CACHE_WB            0x18 
+#define L2D_CACHE_REFILL        0x17 
+#define L2D_CACHE               0x16 
+#define L1D_CACHE_WB            0x15 
+#define L1I_CACHE               0x14 
+#define MEM_ACCESS              0x13 
+#define BR_PRED                 0x12 
+#define CPU_CYCLES              0x11 
+#define BR_MIS_PRED             0x10 
+#define UNALIGNED_LDST_RETIRED  0x0F 
+#define BR_RETURN_RETIRED       0x0E /*Not implemented in A53*/
+#define BR_IMMED_RETIRED        0x0D 
+#define PC_WRITE_RETIRED        0x0C 
+#define CID_WRITE_RETIRED       0x0B 
+#define EXC_RETURN              0x0A 
+#define EXC_TAKEN               0x09 
+#define INST_RETIRED            0x08 
+#define ST_RETIRED              0x07 
+#define LD_RETIRED              0x06 
+#define L1D_TLB_REFILL          0x05 
+#define L1D_CACHE               0x04 
+#define L1D_CACHE_REFILL        0x03 
+#define L1I_TLB_REFILL          0x02 
+#define L1I_CACHE_REFILL        0x01 
+#define SW_INCR                 0x00 
+
 
 /**
  * Read status from a CPU PMU, under control of the flags word.
@@ -98,7 +138,7 @@ typedef struct cs_pmu {
  * \param  flags   Flags e.g. CS_PMU_CYCLES|CS_PMU_ENABLE
  * \param  status  PMU status data to be read from the PMU
  */
-int cs_pmu_read_status(cs_device_t, unsigned int flags, cs_pmu_t * status);
+int cs_pmu_read_status(cs_device_t, unsigned int flags, cs_pmu_t *status);
 
 /**
  *  Write status to a CPU PMU, under control of the flags word.
@@ -106,8 +146,7 @@ int cs_pmu_read_status(cs_device_t, unsigned int flags, cs_pmu_t * status);
  * \param  flags   Flags e.g. CS_PMU_CYCLES, CS_PMU_ENABLE
  * \param  status  PMU status data to be written to the PMU
  */
-int cs_pmu_write_status(cs_device_t, unsigned int flags,
-			cs_pmu_t const *status);
+int cs_pmu_write_status(cs_device_t, unsigned int flags, cs_pmu_t const *status);
 
 /**
  *  Control whether the CPU PMU event bus is exported to ETM etc.
@@ -128,12 +167,13 @@ int cs_pmu_reset(cs_device_t, unsigned int flags);
 /**
  *  Test if a PMU is enabled.
  */
+
 int cs_pmu_is_enabled(cs_device_t);
-
 /** @} */
+ 
 
 
-
-#endif				/* _included_cs_pmu_h */
+#endif /* _included_cs_pmu_h */
 
 /* end of  cs_pmu.h */
+

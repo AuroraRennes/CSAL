@@ -1,41 +1,26 @@
-#############################################################################
-#  CoreSight Access Library
-#
-#  Copyright (C) ARM Limited, 2017. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at#
-#
-#  http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
-#############################################################################
 # Makefile for python module of CS Access library
 #
 
 ####################################
 # tool settings - python module build without using python build utilites
-CC=gcc
+CC=$(CROSS_COMPILE)gcc
 
 # gcc flags - these match those used by python 2.6 build utilities.
 #           - tune according to your python
-CFLAGS= -pthread -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC 
+CFLAGS= -I/usr/include/python2.7 -I/usr/include/python2.7 \
+    -fno-strict-aliasing -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prototypes \
+    -D_FORTIFY_SOURCE=2 -g -fstack-protector --param=ssp-buffer-size=4 \
+    -Wformat -Werror=format-security -fPIC
 
 # set to local python installation for build without using python build utils
 
 ## python includes 
-PYTHON_INC_DIR=/arm/tools/python/python/2.6.5/rhe5-x86_64/include/python2.6/
+PYTHON_INC_DIR=/usr/include/python2.7
 
 ## python library - leave PYTHON_LIB_LINK empty if not linking to python library (python version dependent)
-PYTHON_LIB_DIR=/arm/tools/python/python/2.6.5/rhe5-x86_64/lib
-PYTHON_LIB_NAME=python2.6
-PYTHON_LIB_LINK=-L$(PYTHON_LIB_DIR) -l$(PYTHON_LIB_NAME)
+PYTHON_LIB_LINK=-L/usr/lib/python2.7/config-arm-linux-gnueabihf -lpthread \
+    -ldl -lutil -lm -lpython2.7 -Xlinker -export-dynamic -Wl,-O1 \
+    -Wl,-Bsymbolic-functions
 
 ####################################
 
@@ -51,31 +36,32 @@ DEMO_INC_DIR=../demos
 #  from this makefile if needed.
 
 CSSRC=  $(SRC_DIR)/cs_init_manage.c \
-	$(SRC_DIR)/cs_debug_sample.c \
-	$(SRC_DIR)/cs_pmu.c \
-	$(SRC_DIR)/cs_access_cmnfns.c \
-	$(SRC_DIR)/cs_access_cmnfns.h \
-	$(SRC_DIR)/cs_cti_ect.c \
-	$(SRC_DIR)/cs_etm.c \
-	$(SRC_DIR)/cs_reg_access.c \
-	$(SRC_DIR)/cs_sw_stim.c \
-	$(SRC_DIR)/cs_topology.c \
-	$(SRC_DIR)/cs_trace_sink.c \
-	$(SRC_DIR)/cs_trace_source.c
+        $(SRC_DIR)/cs_debug_sample.c \
+        $(SRC_DIR)/cs_pmu.c \
+        $(SRC_DIR)/cs_access_cmnfns.c \
+        $(SRC_DIR)/cs_access_cmnfns.h \
+        $(SRC_DIR)/cs_cti_ect.c \
+        $(SRC_DIR)/cs_etm.c \
+        $(SRC_DIR)/cs_reg_access.c \
+        $(SRC_DIR)/cs_sw_stim.c \
+        $(SRC_DIR)/cs_topology.c \
+        $(SRC_DIR)/cs_trace_sink.c \
+        $(SRC_DIR)/cs_trace_source.c
 
 CSINCS= $(INC_DIR)/csaccess.h \
-		$(INC_DIR)/cs_cti_ect.h \
-		$(INC_DIR)/cs_debug_sample.h \
-		$(INC_DIR)/cs_etm.h \
-		$(INC_DIR)/cs_etm_types.h \
-		$(INC_DIR)/cs_pmu.h \
-		$(INC_DIR)/cs_reg_access.h \
-		$(INC_DIR)/cs_sw_stim.h \
-		$(INC_DIR)/cs_topology.h \
-		$(INC_DIR)/cs_trace_sink.h \
-		$(INC_DIR)/cs_trace_source.h \
-		$(INC_DIR)/csregisters.h \
-		$(DEMO_INC_DIR)/csregistration.h
+        $(INC_DIR)/cs_cti_ect.h \
+        $(INC_DIR)/cs_init_manage.h \
+        $(INC_DIR)/cs_debug_sample.h \
+        $(INC_DIR)/cs_etm.h \
+        $(INC_DIR)/cs_etm_types.h \
+        $(INC_DIR)/cs_pmu.h \
+        $(INC_DIR)/cs_reg_access.h \
+        $(INC_DIR)/cs_sw_stim.h \
+        $(INC_DIR)/cs_topology.h \
+        $(INC_DIR)/cs_trace_sink.h \
+        $(INC_DIR)/cs_trace_source.h \
+        $(INC_DIR)/csregisters.h \
+        $(INC_DIR)/csregistration.h
 
 ####################################
 #

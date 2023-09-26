@@ -66,6 +66,7 @@
 %include "csregisters.h"
 %include "csaccess.h"
 %include "cs_types.h"
+%include "cs_init_manage.h"
 %include "cs_cti_ect.h"
 %include "cs_debug_sample.h"
 %include "cs_etm_types.h"

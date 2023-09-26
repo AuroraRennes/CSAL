@@ -107,7 +107,7 @@
 <listEntry value="&lt;Next Instruction&gt;"/>
 <listEntry value="100"/>
 </listAttribute>
-<stringAttribute key="debugger.view.EventsView:EventsConfiguration" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&lt;Events LastTimestampSearch=&quot;&quot; view=&quot;debugger.view.EventsView&quot;&gt;&lt;EventConfiguration protocol=&quot;ITM&quot; traceDevice=&quot;ETB_0&quot; traceSource=&quot;ITM_0&quot;&gt;&lt;Master Encoding=&quot;Binary&quot; id=&quot;68&quot;&gt;&lt;![CDATA[0-65535]]&gt;&lt;/Master&gt;&lt;/EventConfiguration&gt;&lt;/Events&gt;"/>
+<stringAttribute key="debugger.view.EventsView:EventsConfiguration" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;no&quot;?&gt;&lt;Events LastTimestampSearch=&quot;&quot; view=&quot;debugger.view.EventsView&quot;&gt;&lt;EventConfiguration protocol=&quot;ITM&quot; traceDevice=&quot;ETB_0&quot; traceSource=&quot;ITM_0&quot;&gt;&lt;Master Encoding=&quot;BINARY&quot; id=&quot;68&quot;&gt;&lt;![CDATA[0-65535]]&gt;&lt;/Master&gt;&lt;/EventConfiguration&gt;&lt;/Events&gt;"/>
 <listAttribute key="debugger.view.TraceView:TRACE_EXPORT_FILTERS"/>
 <stringAttribute key="debugger.view.VariableTreeView:DebugOutlineColumnState" value="OutlineConfig1&#9;0"/>
 <listAttribute key="debugger.view.VariableTreeView:USER_ADDED_FILE_STATICS"/>

@@ -31,12 +31,12 @@
 int cs_sink_is_enabled(cs_device_t dev);
 
 /**
-   Enable a trace sink
+Enable a trace sink
 */
 int cs_sink_enable(cs_device_t dev);
 
 /**
-   Disable a trace sink to stop it generating back-pressure
+Disable a trace sink to stop it generating back-pressure
 */
 int cs_sink_disable(cs_device_t dev);
 
@@ -83,7 +83,7 @@ int cs_empty_trace_buffer(cs_device_t dev);
  *  \param dev   The buffer device (e.g. ETB)
  *  \param data  Data to write in - e.g. 0, 0xCDCDCDCD etc.
  */
-int cs_clear_trace_buffer(cs_device_t dev, unsigned int data);
+int cs_clear_trace_buffer(cs_device_t dev, unsigned int data);  
 
 /** Insert trace data into a buffer device.
  *  This is provided mainly for testing purposes.
@@ -94,12 +94,37 @@ int cs_clear_trace_buffer(cs_device_t dev, unsigned int data);
  *  \param buf   Trace data to write into the buffer
  *  \param size  Size of the data, in bytes
  */
-int cs_insert_trace_data(cs_device_t dev, void const *buf,
-			 unsigned int size);
+int cs_insert_trace_data(cs_device_t dev, void const *buf, unsigned int size);
+
+/** Enable a tmc as hardware fifo.
+ *  
+ *  \param dev   The fifo device (e.g. ETF/TMC)
+ *  \param bufwm Buffer water mark, required threshold fill level of fifo
+ */
+int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm);
+
+/**
+Disable a tmc as hardware fifo
+*/
+int cs_tmc_hw_fifo_disable(cs_device_t dev);
+
+/**
+Enable test mode on tpiu (in continuous mode).
+*/
+int cs_tpiu_test_mode_enable(cs_device_t dev);
+
+/**
+Disable test mode on tpiu.
+*/
+int cs_tpiu_test_mode_disable
+(cs_device_t dev);
+
+
+void dump_tmc_config(cs_device_t * tmc_hw_fifo);
 
 
 /** @} */
 
-#endif				/* _included_cs_trace_sink_h */
+#endif /* _included_cs_trace_sink_h */
 
 /* end of  cs_trace_sink.h */

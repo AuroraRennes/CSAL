@@ -1,25 +1,8 @@
-#############################################################################
-#  CoreSight Access Library
-#
-#  Copyright (C) ARM Limited, 2017. All rights reserved.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at#
-#
-#  http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-#
-#############################################################################
+# CoreSight Access Library
 # 
 # This makefile builds the CS-Access library for both static and dynamic linked versions. 
 #
-# Default builds the standard release versions, linux application space, arm 32 arch
+# Default builds the standard release versions, linux application space
 #
 # to build debug add DEBUG=1 to the make command line
 # to build in the v7 debug halt extensions add DBG_HALT=1 to the make command line
@@ -29,27 +12,24 @@
 # make DEBUG=1 
 #  
 
-# setup architecture & x-compile
-include ../makefile-arch.inc
-
-# default settings - allow for cross compile of library 
-CC=$(CROSS_COMPILE)gcc
+# default settings
+CC=$(CROSS_COMPILE)
 CFLAGS=-Wall -Wno-switch
 
-LIB_DIR = ../lib/$(ARCH)/rel
-LIB_DIR_BM=../lib/$(ARCH)/rel_bm
+LIB_DIR = ../lib/rel
+LIB_DIR_BM=../lib/rel_bm
 LIB_NAME=csaccess
 LIB_NAME_UTIL=csacc_util
-BUILD_DIR=./rel-$(ARCH)
-BUILD_DIR_BM=./rel_bm-$(ARCH)
+BUILD_DIR=./rel
+BUILD_DIR_BM=./rel_bm
 
 # build options
 ifeq ($(DEBUG),1)
 CFLAGS+= -O0 -DDEBUG -g
-LIB_DIR = ../lib/$(ARCH)/dbg
-LIB_DIR_BM = ../lib/$(ARCH)/dbg_bm
-BUILD_DIR=./dbg-$(ARCH)
-BUILD_DIR_BM=./dbg_bm-$(ARCH)
+LIB_DIR = ../lib/dbg
+LIB_DIR_BM = ../lib/dbg_bm
+BUILD_DIR=./dbg
+BUILD_DIR_BM=./dbg_bm
 else
 CFLAGS+= -O2 -DNDEBUG
 endif
@@ -67,19 +47,14 @@ CFLAGS+= -DUSING_V7_DBG_HALT
 CSSRC_HALT=cs_debug_halt.c
 endif
 
-# check if building on/for aarch64
-ifeq ($(ARCH),arm64)
-CFLAGS+= -DCS_VA64BIT
-ifneq ($(NOLPAE),1)
-CFLAGS+= -DLPAE
-endif
-
-else
-# arm 32 - might want lpae
+# LPAE options
 ifeq ($(LPAE),1)
 CFLAGS+= -DLPAE
 endif
 
+# 64 bit VAs
+ifeq ($(VA64),1)
+CFLAGS+= -DCS_VA64BIT
 endif
 
 #disable diagnostic printing
@@ -126,30 +101,19 @@ INCS=   -I. \
 
 # build rules for the .a lib
 $(BUILD_DIR)/a/%.o: %.c
-	$(CC) $(CFLAGS) $(INCS) -MMD -MP -c $< -o $@
+	$(CC) $(CFLAGS) $(INCS) -c $< -o $@
 A_OBJS=$(addprefix $(BUILD_DIR)/a/,$(CSSRC:%.c=%.o))	
 A_OBJS_UTIL=$(addprefix $(BUILD_DIR)/a/,$(CSUTILSRC:%.c=%.o))
-A_DEPS=$(A_OBJS:.o=.d)
-A_DEPS_UTIL=$(A_OBJS_UTIL:.o=.d)
 
 # build rules for the .so lib
 $(BUILD_DIR)/so/%.o: %.c
-	$(CC) $(CFLAGS) -fPIC $(INCS) -MMD -MP -c $< -o $@	
+	$(CC) $(CFLAGS) -fPIC $(INCS) -c $< -o $@	
 SO_OBJS=$(addprefix $(BUILD_DIR)/so/,$(CSSRC:%.c=%.o))	
 SO_OBJS_UTIL=$(addprefix $(BUILD_DIR)/so/,$(CSUTILSRC:%.c=%.o))
-SO_DEPS=$(SO_OBJS:.o=.d)
-SO_DEPS_UTIL=$(SO_OBJS_UTIL:.o=.d)
 
 # build both lib types
 .PHONY: all
-all: start lib_a lib_so 
-
-# start msg
-start:
-	@echo "CSAL libraries: Building ARCH=$(ARCH), CROSS_COMPILE=$(CROSS_COMPILE)"
-	@echo "MAKEFLAGS = $(MAKEFLAGS)"
-	@echo ""
-
+all: lib_a lib_so 
 
 # create the lib output and build dirs
 .PHONY: lib_dir
@@ -179,12 +143,6 @@ lib$(LIB_NAME).so: $(SO_OBJS)
 lib$(LIB_NAME_UTIL).so: $(SO_OBJS_UTIL)
 	$(CC) -shared -o $(LIB_DIR)/lib$(LIB_NAME_UTIL).so $(SO_OBJS_UTIL)
 
-# include generated dependency files
--include $(A_DEPS)
--include $(A_DEPS_UTIL)
--include $(SO_DEPS)
--include $(SO_DEPS_UTIL)
-
 
 # clean all object files and libraries
 .PHONY: clean
@@ -194,9 +152,31 @@ clean: clean_objs
 
 .PHONY: clean_objs
 clean_objs:
-	rm -fr $(A_OBJS) $(A_DEPS)
-	rm -fr $(A_OBJS_UTIL) $(A_DEPS_UTIL)
-	rm -fr $(SO_OBJS) $(SO_DEPS)
-	rm -fr $(SO_OBJS_UTIL) $(SO_DEPS_UTIL)
+	rm -fr $(A_OBJS)
+	rm -fr $(A_OBJS_UTIL)
+	rm -fr $(SO_OBJS)
+	rm -fr $(SO_OBJS_UTIL)
 
+###### library maintenance operaions ##################################
+
+# CS Lib API Documentation
+docs: ../doxygen-cfg.txt 
+	cd ../. && doxygen doxygen-cfg.txt 
+
+
+# create a distribution file.
+libsources = ../source ../include ../build/Makefile ../build/readme_build.md
+demosources = ../demos/*.c ../demos/*.h ../demos/Makefile ../demos/readme_demos.md
+pythonsources = ../python/*.py ../python/Makefile ../python/csaccess_py.c ../python/csaccess.i 
+sources = $(libsources) $(demosources) $(pythonsources)
+distfile = csaccess.tar.gz
+
+.PHONY: dist
+dist: $(distfile)
+
+# readme.html
+
+$(distfile): $(sources) ../doxygen-cfg.txt ../readme.md ../readme.xml 
+	tar -czf $@ $^
+	tar -tzf $@
 

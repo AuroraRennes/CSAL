@@ -18,15 +18,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from __future__ import print_function
-
 import os
 
 
 def fn_is_source(fn):
     base, ext = os.path.splitext(fn)
-    if "makefile" in base:
-        return base
     return ext in [".c", ".cpp", ".h", ".py"]
 
 
@@ -44,7 +40,7 @@ def fn_is_licensed(fn):
             break
     if False:
         if found is not None:
-            print("%s: found at line %u" % (fn, found))
+            print "%s: found at line %u" % (fn, found)
     return found is not None
 
 
@@ -56,7 +52,7 @@ def check_all_sources_licensed(dir):
             if fn_is_source(fn):
                 n_files += 1
                 if not fn_is_licensed(fn):
-                    print("%s: not licensed" % fn)
+                    print "%s: not licensed" % fn
 
 
 check_all_sources_licensed(os.path.dirname(os.path.realpath(__file__)))

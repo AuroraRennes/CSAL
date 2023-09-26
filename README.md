@@ -3,14 +3,14 @@ CoreSight Access Library        {#mainpage}
 
 The __CoreSight Access Library__ provides an API which enables user code to interact directly with CoreSight trace devices on your target.  
 This allows, for example, program execution trace to be captured in a production system without the need to 
-have an external debugger connected.  The saved trace can be retrieved later and loaded into a debugger for analysis.  
+have an external debugger connected.  The saved trace can be retrieved later and loaded into DS-5 debugger for analysis.  
 
 The library supports a number of different CoreSight components on several target boards as described in the 
 [demos `readme`](@ref demos) file described below. 
   
 You can modify the library and demos to support other CoreSight components and/or boards.  An example Linux application 
 (`tracedemo`) that exercises the library is provided.  As it runs, `tracedemo` creates several files on the target, 
-including the captured trace. Ready-made example capture files are provided that can be loaded into a debugger.
+including the captured trace. Ready-made example capture files are provided that can be loaded into DS-5 debugger.
 
 CoreSight Trace Component Support
 ---------------------------------
@@ -36,7 +36,10 @@ Optional support is provided for intrusive halting mode debug support of v7 Arch
 Installation
 ------------
 
-Library supplied as a git repository on github - git@github.com:ARM-software/CSAL.git
+The sources are provided in `[DS-5 install dir]/examples/CoreSight_Access_Library.zip`
+This file should be extracted into a suitable location for use.
+
+The `.zip` file extracts to provide the following directories and files:-
 
 `./source` : Contains all the library source .c files.
 
@@ -46,16 +49,11 @@ Library supplied as a git repository on github - git@github.com:ARM-software/CSA
 
 `./build`  : The main library build `Makefile`. Change to this directory to build the library.
 
-`./python` : Build and source files to make a python module to interface to the library. (unmaintained)
-
-`./experimental` : Unmaintained and unsupported additional demos.
+`./python` : Build and source files to make a python module to interface to the library.
 
 `./doxygen-cfg.txt` : File to generate API documentation using __doxygen__.
 
-`./README.md` : This readme text file - which is also processed by __doxygen__.
-
-`./makefile`  : master makefile - `make help` for list of targets.
-
+`./readme.md` : This readme text file - which is also processed by __doxygen__.
 
 Documentation
 -------------
@@ -71,22 +69,20 @@ the `readme*.md` files as part of the documentation.
 Usage
 -----
 
-__Building the Library and Demos__:
+__Building the Library__:
+Change into the `./build` directory and run `make` to build the standard version of the library. 
+This will create and deliver the library into the `./lib/rel` directory. To use the library 
+in a program include the file `csaccess.h` from the `./include` directory and link to the built library. 
 
-Run `make` from the root of the installation. This will build the standard version of the library,
-and deliver the library into the `./lib/<arch>/rel` directory. The demonstration programs will be
-built and linked to the library, delivered into the `./bin/<arch>/rel` directory. 
+See [`./build/readme_buildlib.md`](@ref buildlib) for further information.
 
-To use the library in a program include the file `csaccess.h` from the `./include` directory and
-link to the built library. 
+__Building and Running the Demos__: 
+Change into the `./demos` directory. Run `make` to build all the demo programs. 
+These will link to the built library in `./lib/rel`.  
 
-See [`./build/readme_buildlib.md`](@ref buildlib) for further information on building the library.
-
-See [`./demos/readme_demos.md`](@ref demos) for further information on running the demos.
+See [`./build/readme_demos.md`](@ref demos) for further information on running the demos.
 
 __Using the Library in Python__:
-
-This experimental code is not built by default.
 The ./python directory contains source and makefiles to generate a python module to allow
 use of the library. 
 
@@ -152,18 +148,12 @@ Updates to APIs:-
 - Updated topology detection to recognise an Embedded Logic Analyser type component.
 - Updated documentation for running Juno examples an shipping scripts to set up the platform.
 
-Version 2.3
--------------
-- Transfer to github project
-- makefile updates for x-compile and master makefile in project root dir.
-- moved some code to 'experimental' directory - demos that are not maintained / supported. 
-
 ------------------------------------
 
 Licence Information
 ===================
 
-*Copyright (C) ARM Limited, 2014-2021. All rights reserved.*
+*Copyright (C) ARM Limited, 2014. All rights reserved.*
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

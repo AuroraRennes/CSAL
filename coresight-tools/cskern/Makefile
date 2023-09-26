@@ -14,10 +14,10 @@ KERNARCH=$(KERNSRC)/arch/arm64
 MODSRC=$(shell pwd)
 obj-m += $(MOD).o
 
-load : $(MOD).ko
-	sudo insmod $^
-	dmesg | tail -6
-	@ls -l /dev/cs*mem
+#load : $(MOD).ko
+#	sudo insmod $^
+#	dmesg | tail -6
+#	@ls -l /dev/cs*mem
 
 $(MOD).ko : $(MOD).c
 	make -C $(KERNSRC) M=$(MODSRC) modules
