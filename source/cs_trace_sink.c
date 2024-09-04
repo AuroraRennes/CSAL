@@ -203,7 +203,22 @@ int cs_sink_disable(cs_device_t dev)
             _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
             /* Wait until TMCReady is equal to one. */
             _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
-        }
+        } else if (mode == CS_ETB_RAM_MODE_SW_FIFO &&
+            _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+            /* Set StopOnFl */
+            _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
+            /* Set FlushMan to flush and stop */
+            _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+            /* Wait until TMCReady is equal to one. */
+	    fprintf(stderr, "flushing...\n");
+	    while (1) {
+	      unsigned int reg = _cs_read(d, CS_ETB_RAM_DATA);	      
+	      if (reg == 0xFFFFFFFF) {
+		  if (_cs_isset(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady) ) { break; }
+	      } else { fprintf(stdout, "%08x\n", reg); }
+	    }
+	    fprintf(stderr, "FLUSHED %x!\n",d);
+	}
         /* ETB or TMC */
         if (d->v.etb.is_tmc_device &&
             _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
@@ -285,6 +300,35 @@ int cs_tmc_hw_fifo_disable(cs_device_t dev){
   _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
   /* "Disable trace capture" by unsetting TraceCaptEn */
   return _cs_write(d, CS_ETB_CTRL, 0x0);
+}
+
+int cs_tmc_sw_fifo_enable(cs_device_t dev, unsigned int bufwm)
+{ /* https://developer.arm.com/documentation/ddi0461/b/Functional-Description/Operation/Standard-usage-models-for-the-TMC?lang=en */
+  struct cs_device *d = DEV(dev);
+
+  assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER) && 
+         cs_device_has_class(dev, CS_DEVCLASS_SINK)   && 
+         cs_device_has_class(dev, CS_DEVCLASS_LINK));
+  assert(d -> v.etb.is_tmc_device);
+  assert(d->type == DEV_ETF);
+
+  fprintf(stderr,"Mode...\n");
+  _cs_unlock(d);
+  _cs_write(d, CS_ETB_CTRL, 0);
+  d->v.etb.currently_reading = 0;
+  if (_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+    fprintf(stderr, "GTFOing.\n");
+    return 0;
+  }
+  /* Wait until TMCReady is equal, indicating that the previous trace session is over. */
+  _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  _cs_write(d, CS_TMC_MODE, CS_TMC_MODE_SWFIFO);
+  _cs_write(d, CS_TMC_BUFWM, bufwm);
+
+  unsigned int check = _cs_read(d, CS_TMC_MODE);
+  fprintf(stderr,"Mode: %b\n", check);
+
+  return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
 }
 
 int cs_disable_tpiu(void)
