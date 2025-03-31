@@ -81,6 +81,7 @@ int cs_sink_enable(cs_device_t dev)
 int cs_sink_disable(cs_device_t dev)
 {
     int rc;
+    // int mode;
     struct cs_device *d = DEV(dev);
 
     assert(cs_device_has_class(dev, CS_DEVCLASS_SINK));
@@ -100,6 +101,16 @@ int cs_sink_disable(cs_device_t dev)
         /* Stopping and flushing the SWO is not supported */
         return -1;
     } else if (d->type == DEV_ETB || d->type == DEV_ETF) {
+        // mode = _cs_read(d, CS_TMC_MODE);
+        // if (mode == CS_TMC_MODE_HWFIFO &&
+        //     _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+        //     /* Set StopOnFl */
+        //     _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
+        //     /* Set FlushMan to flush and stop */
+        //     _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+        //     /* Wait until TMCReady is equal to one. */
+        //     _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+        // }
         /* ETB or TMC */
         if (d->v.etb.is_tmc_device &&
             _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
@@ -474,6 +485,94 @@ int cs_insert_trace_data(cs_device_t dev, void const *buf,
         }
     }
     return 0;
+}
+
+
+unsigned int cs_get_buffer_rwp(cs_device_t dev)
+{
+  struct cs_device *d = DEV(dev);
+  assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER));
+  return _cs_read(d, CS_ETB_RAM_WR_PTR);
+}
+
+
+int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
+{
+  unsigned int flfmt;
+  struct cs_device *d = DEV(dev);
+
+  assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER) &&
+         cs_device_has_class(dev, CS_DEVCLASS_SINK)   &&
+         cs_device_has_class(dev, CS_DEVCLASS_LINK));
+  assert(d -> v.etb.is_tmc_device);
+  assert(d->type == DEV_ETF);
+
+  _cs_unlock(d);
+  d->v.etb.currently_reading = 0;
+  if (_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+    return 0;
+  }
+  /* Wait until TMCReady is equal, indicating that the previous trace session is over. */
+  _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  _cs_write(d, CS_TMC_MODE, CS_TMC_MODE_HWFIFO);
+  /* Set up flushing and formatting controls.
+        CS_ETB_FLFMT_CTRL_EnFTC: enable formatting into 16-byte frames,
+            in case there are multiple trace sources.
+        CS_ETB_FLFMT_CTRL_EnFCont: enable insertion of triggers (TMC)
+  */
+  flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont;
+  _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
+  _cs_write(d, CS_TMC_BUFWM, bufwm);
+
+  return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+}
+
+int cs_tmc_hw_fifo_disable(cs_device_t dev){
+  struct cs_device *d = DEV(dev);
+
+  assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER) &&
+         cs_device_has_class(dev, CS_DEVCLASS_SINK)   &&
+         cs_device_has_class(dev, CS_DEVCLASS_LINK));
+  assert(d -> v.etb.is_tmc_device);
+  assert(d->type == DEV_ETF);
+
+  _cs_unlock(d);
+  /* Set to stop on flush event. */
+  _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
+  /* Flush the trace data remaining in fifo. */
+  _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+  /* Now in Stopping: Wait until TMCReady is equal to one. This indicates that the trace session is over. */
+  _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  /* "Disable trace capture" by unsetting TraceCaptEn */
+  return _cs_write(d, CS_ETB_CTRL, 0x0);
+}
+
+void dump_tmc_config(cs_device_t * dev){
+    struct cs_device *d = DEV(dev);
+
+    assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER) &&
+          cs_device_has_class(dev, CS_DEVCLASS_SINK)   &&
+          cs_device_has_class(dev, CS_DEVCLASS_LINK));
+    assert(d -> v.etb.is_tmc_device);
+    assert(d->type == DEV_ETF);
+
+    printf("--------TMC SETUP(0x%p)--------\n",(void*)d);
+    printf("CS_ETB_RAM_DEPTH:0x%x\n",_cs_read(d, CS_ETB_RAM_DEPTH));
+    printf("CS_ETB_RAW_WIDTH:0x%x\n",_cs_read(d, CS_ETB_RAW_WIDTH));
+    printf("CS_ETB_STATUS:0x%x\n",_cs_read(d, CS_ETB_STATUS));
+    printf("CS_ETB_RAM_DATA:0x%x\n",_cs_read(d, CS_ETB_RAM_DATA));
+    printf("CS_ETB_RAM_RD_PTR:0x%x\n",_cs_read(d, CS_ETB_RAM_RD_PTR));
+    printf("CS_ETB_RAM_WR_PTR:0x%x\n",_cs_read(d, CS_ETB_RAM_WR_PTR));
+    printf("CS_ETB_TRIGGER_COUNT:0x%x\n",_cs_read(d, CS_ETB_TRIGGER_COUNT));
+    printf("CS_ETB_CTRL:0x%x\n",_cs_read(d, CS_ETB_CTRL));
+    printf("CS_TMC_MODE:0x%x\n",_cs_read(d, CS_TMC_MODE));
+    printf("CS_TMC_LBUFLEVEL:0x%x\n",_cs_read(d, CS_TMC_LBUFLEVEL));
+    printf("CS_TMC_CBUFLEVEL:0x%x\n",_cs_read(d, CS_TMC_CBUFLEVEL));
+    printf("CS_TMC_BUFWM:0x%x\n",_cs_read(d, CS_TMC_BUFWM));
+    printf("CS_ETB_FLFMT_STATUS:0x%x\n",_cs_read(d, CS_ETB_FLFMT_STATUS));
+    printf("CS_ETB_FLFMT_CTRL:0x%x\n",_cs_read(d, CS_ETB_FLFMT_CTRL));
+    printf("CS_ETB_PER_SYNC_COUNT:0x%x\n",_cs_read(d, CS_ETB_PER_SYNC_COUNT));
+    printf("----------------------------------\n");
 }
 
 /* end of cs_trace_sink.c */

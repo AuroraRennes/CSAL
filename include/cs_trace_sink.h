@@ -3,13 +3,13 @@
  * \brief      CS Access API - functionality relating to trace sinks and buffers
  *
  * \copyright  Copyright (C) ARM Limited, 2014. All rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -100,6 +100,22 @@ int cs_clear_trace_buffer(cs_device_t dev, unsigned int data);
 int cs_insert_trace_data(cs_device_t dev, void const *buf,
 			 unsigned int size);
 
+/** Enable a tmc as hardware fifo.
+ *
+ *  \param dev   The fifo device (e.g. ETF/TMC)
+ *  \param bufwm Buffer water mark, required threshold fill level of fifo
+ */
+int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm);
+
+/**
+Disable a tmc as hardware fifo
+*/
+int cs_tmc_hw_fifo_disable(cs_device_t dev);
+
+/**
+Dump the configuration of a TMC component
+*/
+void dump_tmc_config(cs_device_t * tmc_hw_fifo);
 
 /** @} */
 
