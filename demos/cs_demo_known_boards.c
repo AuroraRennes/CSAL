@@ -613,7 +613,7 @@ static int do_registration_zcu104(struct cs_devices_t *devices)
   devices->etb = etr;
   devices->trace_sinks[0] = etf1;
   devices->trace_sinks[1] = etf2;
-  devices->n_trace_sinks = 2;
+  devices->num_trace_sinks = 2;
 #else
   devices->etb = etf1;
   devices->trace_sinks[0] = etr;
