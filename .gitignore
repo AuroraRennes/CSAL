@@ -1,3 +1,6 @@
+# make file rules
+*.d
+
 # Object files
 *.o
 *.ko
