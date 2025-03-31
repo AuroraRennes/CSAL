@@ -109,7 +109,7 @@ static int do_registration_arndale(struct cs_devices_t *devices)
 #ifndef BAREMETAL
         devices->cpu_id[i] = cpu_id[i];
 #else
-        devices->cpu_id[i] = 0xC0F;    
+        devices->cpu_id[i] = 0xC0F;
 #endif
     }
     return 0;
@@ -351,7 +351,7 @@ static int do_registration_juno(struct cs_devices_t *devices)
     devices->itm = stm;
     devices->etb = etf;		/* core output through main etf */
 
-    /* STM needs to init master address and master 0 by default 
+    /* STM needs to init master address and master 0 by default
        All Juno cores see a single master @ 0, but other select bits
        ensure different cores and security options result in different
        master IDs in output.
@@ -394,7 +394,7 @@ static int do_registration_juno(struct cs_devices_t *devices)
     cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 5), stm, CS_TRIGIN_STM_HWEVENT_2);	/* rising edge */
     cs_cti_connect_trigdst(cs_cti_trigdst(sys_cti, 5), stm, CS_TRIGIN_STM_HWEVENT_3);	/* falling edge */
 
-    /* the linux board probe does not set up CPUIDs correctly for Juno - 
+    /* the linux board probe does not set up CPUIDs correctly for Juno -
        hardcode here for both linux and BAREMETAL. */
     for (i = 0; i < 4; i++)
         devices->cpu_id[i] = 0xD03;
@@ -518,6 +518,220 @@ static int do_registration_soc600fpga(struct cs_devices_t *devices)
     return -1;
 }
 
+
+static int do_registration_zcu104(struct cs_devices_t *devices)
+{
+  enum { A53_0, A53_1, A53_2, A53_3 };
+
+  int i;
+  cs_device_t funnel1, funnel2, etf1, etf2, rep, etr, tpiu, cti0, cti1, stm, tsgen;
+
+  if (registration_verbose)
+    printf("CSDEMO: Registering ZCU104 CoreSight Devices...\n");
+
+  cs_exclude_range(0xFE9E0000, 0xFEC00000);  /* Exclude Cortex-R5 components */
+  cs_register_romtable(0xFE800000);              /* ROM table registration */
+
+  if (registration_verbose)
+    printf("CSDEMO: Registering CPU Affinities...\n");
+
+  /* CTI affinities */
+  cs_device_set_affinity(cs_device_register(0xFEC20000), A53_0);
+  cs_device_set_affinity(cs_device_register(0xFED20000), A53_1);
+  cs_device_set_affinity(cs_device_register(0xFEE20000), A53_2);
+  cs_device_set_affinity(cs_device_register(0xFEF20000), A53_3);
+
+  /* PMU affinities */
+  cs_device_set_affinity(cs_device_register(0xFEC30000), A53_0);
+  cs_device_set_affinity(cs_device_register(0xFED30000), A53_1);
+  cs_device_set_affinity(cs_device_register(0xFEE30000), A53_2);
+  cs_device_set_affinity(cs_device_register(0xFEF30000), A53_3);
+
+  /* ETM affinities */
+  cs_device_set_affinity(cs_device_register(0xFEC40000), A53_0);
+  cs_device_set_affinity(cs_device_register(0xFED40000), A53_1);
+  cs_device_set_affinity(cs_device_register(0xFEE40000), A53_2);
+  cs_device_set_affinity(cs_device_register(0xFEF40000), A53_3);
+
+
+  /* STM configuration */
+  stm = cs_device_get(0xFE9C0000);
+  devices->itm = stm;
+  cs_stm_config_master(stm, 0, 0xF8000000); // to 0xF8FFFFFF, or 16 MB
+  cs_stm_select_master(stm, 0);
+
+  /* FTM configuration */
+  // cs_device_t = ftm;
+  // ftm = cs_device_get(0xFE9D0000);
+
+  if (registration_verbose)
+    printf("CSDEMO: Registering trace-bus connections...\n");
+
+
+  /*TS gen*/
+  // tsgen = cs_device_get(0xFE900000);
+
+  /* All ETMs feed into funnel1, funnel0 is used by the Cortex-R5 and unused in our case */
+  funnel1 = cs_device_get(0xFE920000);
+  cs_atb_register(cs_cpu_get_device(A53_0, CS_DEVCLASS_SOURCE), 0, funnel1, 0);
+  cs_atb_register(cs_cpu_get_device(A53_1, CS_DEVCLASS_SOURCE), 0, funnel1, 1);
+  cs_atb_register(cs_cpu_get_device(A53_2, CS_DEVCLASS_SOURCE), 0, funnel1, 2);
+  cs_atb_register(cs_cpu_get_device(A53_3, CS_DEVCLASS_SOURCE), 0, funnel1, 3);
+
+  /* Funnel 1 connects into ETF1 */
+  etf1 = cs_device_get(0xFE940000);
+  cs_atb_register(funnel1, 0, etf1, 0);
+
+  /* Funnel0 feeds into funnel2 on port 0, ETF1 on port 2 and STM on port 3 */
+  funnel2 = cs_device_get(0xFE930000);
+  cs_atb_register(etf1, 0, funnel2, 2);
+  cs_atb_register(stm, 0, funnel2, 3);
+  /* R5 input would be here! */
+
+  /* Funnel 2 connects into ETF2 */
+  etf2 = cs_device_get(0xFE950000);
+  cs_atb_register(funnel2, 0, etf2, 0);
+
+  /* ETF2 feeds into the replicator outputting to TPIU or ETR */
+#if 0
+  /* This one does not seem to work */
+  rep = cs_atb_add_replicator(2);
+#else
+  rep = cs_device_get(0xFE960000);
+#endif
+
+  cs_atb_register(etf2, 0, rep, 0);
+
+  etr = cs_device_get(0xFE970000);
+  cs_atb_register(rep, 0, etr, 0);
+
+  tpiu = cs_device_get(0xFE980000);
+  cs_atb_register(rep, 1, tpiu, 0);
+
+  /* Sink configuration */
+#if 0
+  devices->etb = etr;
+  devices->trace_sinks[0] = etf1;
+  devices->trace_sinks[1] = etf2;
+  devices->n_trace_sinks = 2;
+#else
+  devices->etb = etf1;
+  devices->trace_sinks[0] = etr;
+#endif
+
+  /* CTI SETUP, according to Table 39-8, p.1190 in US+ TRM */
+  /* There are two main CTIs, 1 is for ETR/ETF/TPIU, 2 is for FTM/STM */
+  /* There are 2 for R5 (1/core) and for for the A53 (1/core) */
+  cti0 = cs_device_register(0xFE990000);
+  cti1 = cs_device_register(0xFE9A0000);
+
+   /* ETF */
+  /* ins */
+  cs_cti_connect_trigsrc(
+    etf1, CS_TRIGOUT_ETB_FULL,
+    cs_cti_trigsrc(cti0, 0)
+  );
+  cs_cti_connect_trigsrc(
+    etf1, CS_TRIGOUT_ETB_ACQCOMP,
+    cs_cti_trigsrc(cti0, 1)
+  );
+  cs_cti_connect_trigsrc(
+    etf2, CS_TRIGOUT_ETB_FULL,
+    cs_cti_trigsrc(cti0, 2)
+  );
+  cs_cti_connect_trigsrc(
+    etf2, CS_TRIGOUT_ETB_ACQCOMP,
+    cs_cti_trigsrc(cti0, 3)
+  );
+  /* outs */
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 0),
+    etf1, CS_TRIGIN_ETB_FLUSHIN
+  );
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 1),
+    etf1, CS_TRIGIN_ETB_TRIGIN
+  );
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 2),
+    etf2, CS_TRIGIN_ETB_FLUSHIN
+  );
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 3),
+    etf2, CS_TRIGIN_ETB_TRIGIN
+  );
+
+  /* ETR */
+  /* ins */
+  cs_cti_connect_trigsrc(
+    etr, CS_TRIGOUT_ETB_FULL,
+    cs_cti_trigsrc(cti0, 4)
+  );
+  cs_cti_connect_trigsrc(
+    etr, CS_TRIGOUT_ETB_ACQCOMP,
+    cs_cti_trigsrc(cti0, 5)
+  );
+  /* outs */
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 4),
+    etr, CS_TRIGIN_ETB_FLUSHIN
+  );
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 5),
+    etr, CS_TRIGIN_ETB_TRIGIN
+  );
+
+  /* TPIU */
+  /* outs */
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 6),
+    tpiu, CS_TRIGIN_ETB_FLUSHIN
+  );
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti0, 7),
+    tpiu, CS_TRIGIN_ETB_TRIGIN
+  );
+
+  /* STM */
+  /* ins */
+  cs_cti_connect_trigsrc(
+    stm, CS_TRIGOUT_STM_TRIGOUTSPTE,
+    cs_cti_trigsrc(cti1, 4)
+  );
+  cs_cti_connect_trigsrc(
+    stm, CS_TRIGOUT_STM_TRIGOUTSW,
+    cs_cti_trigsrc(cti1, 5)
+  );
+  cs_cti_connect_trigsrc(
+    stm, CS_TRIGOUT_STM_TRIGOUTHETE,
+    cs_cti_trigsrc(cti1, 6)
+  );
+  cs_cti_connect_trigsrc(
+    stm, CS_TRIGOUT_STM_ASYNCOUT,
+    cs_cti_trigsrc(cti1, 7)
+  );
+  /* outs */
+#if 0
+  // Hardware events if needed.
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti1, 4),
+    stm, CS_TRIGIN_STM_HWEVENT_0
+  );
+  cs_cti_connect_trigdst(
+    cs_cti_trigdst(cti1, 5),
+    stm, CS_TRIGIN_STM_HWEVENT_1
+  );
+#endif
+
+  // devices->tsgen = tsgen;
+
+  for (i = 0; i < 4; i++) {
+    devices->cpu_id[i] = cpu_id[i];
+  }
+
+  return 0;
+}
+
 const struct board known_boards[] = {
     {
         .do_registration = do_registration_arndale,
@@ -547,6 +761,10 @@ const struct board known_boards[] = {
         .do_registration = do_registration_soc600fpga,
         .n_cpu = 2,
         .hardware = "SoC-600 FPGA",
+    }, {
+        .do_registration = do_registration_zcu104,
+        .n_cpu = 4,
+        .hardware = "ZCU 104",
     },
     {}
 };
