@@ -1,7 +1,7 @@
 /*!
  * \file      csregisters.h
  * \brief     CS Access API: CoreSight architectural definitions.
- * 
+ *
  * This header defines macros defining register names, offsets and values for ARM CoreSight devices.
  *
  * \ copyright Copyright (C) ARM Limited, 2013-2016. All rights reserved.
@@ -9,9 +9,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,7 +36,7 @@ could be used for kernel drivers, userspace drivers, remote tools etc.
 @{
 */
 
-/** @defgroup cs_reg_mgmnt CoreSight Architecture management registers. 
+/** @defgroup cs_reg_mgmnt CoreSight Architecture management registers.
     @ingroup reg_defs
 
 Common register definitions in the management group of all CoreSight devices
@@ -44,7 +44,7 @@ Common register definitions in the management group of all CoreSight devices
 @{
 */
 
-/** @name CoreSight ID 
+/** @name CoreSight ID
  Common device identification registers on all CoreSight components
  */
 /**@{*/
@@ -103,7 +103,7 @@ There are conflicting claim tag recommendations in Arm documentation.
 
   IHI0074B ADI 6.0 C1.4.3, in the section on APs:
     bit 0 self-hosted and bit 1 external.
- 
+
   DEN0034A Debug and Trace Configuration and Usage Models 3.2.1:
     bit 0 external and bit 1 self-hosted.
 
@@ -134,10 +134,10 @@ with a JTAG debugger or OS device drivers.
 
 /** @} */
 
-/** @defgroup cs_etmv3_ptm CoreSight ETMv3 and PTM registers. 
+/** @defgroup cs_etmv3_ptm CoreSight ETMv3 and PTM registers.
     @ingroup reg_defs
 
-Register definitions and bitfield values for the ETM architecture v3 and 
+Register definitions and bitfield values for the ETM architecture v3 and
 Program Flow Trace (PTM) macrocells .
 
 @{
@@ -197,8 +197,8 @@ Generate offset for register (n), 0 indexed */
 /** @}*/
 
 /** @name ETM Event resources.
- * Event resource selectors consist of a seven bit field: 'type'[6:4] and 'index'[3:0]. These 
- * resource selectors are then used in the #CS_ETMEVENT macros as 'a' or 'b' resources to create the 
+ * Event resource selectors consist of a seven bit field: 'type'[6:4] and 'index'[3:0]. These
+ * resource selectors are then used in the #CS_ETMEVENT macros as 'a' or 'b' resources to create the
  * event descriptor.
  *
  * Due to the way events are encoded, an event resource
@@ -231,7 +231,7 @@ Generate offset for register (n), 0 indexed */
 /** @}*/
 
 
-/** @name Address Comparators 
+/** @name Address Comparators
 @{*/
 #define CS_ETMACVR(n)    (0x040 + 4*(n))  /**< Address Comparator Value register (n) */
 #define CS_ETMACTR(n)    (0x080 + 4*(n))  /**< Address Comparator Type register (n) */
@@ -276,7 +276,7 @@ Generate offset for register (n), 0 indexed */
 #define CS_ETMDCVR(n)       (0x0c0 + 8*(n))  /**< Data Comparator Value Register (n) */
 #define CS_ETMDCMR(n)       (0x100 + 8*(n))  /**< Data Comparator Mask Register (n) */
 /** @}*/
-/** @name Counters 
+/** @name Counters
 @{*/
 #define CS_ETMCNTRLDVR(n)  (0x140 + 4*(n))   /**< Counter Reload Value Register (n) */
 #define CS_ETMCNTENR(n)    (0x150 + 4*(n))   /**< Counter Enable Register (n) */
@@ -337,7 +337,7 @@ Registers and definitions used to program the ETM sequencer.
 /** @} */
 
 
-/** @defgroup cs_etmv4 CoreSight ETMv4 registers. 
+/** @defgroup cs_etmv4 CoreSight ETMv4 registers.
     @ingroup reg_defs
 
 Register definitions and bitfield values for the ETM architecture v4
@@ -345,7 +345,7 @@ Register definitions and bitfield values for the ETM architecture v4
 @{
 */
 
-/** @name Trace control 
+/** @name Trace control
 @{*/
 #define CS_ETMV4_PRGCTLR        0x004	/**< ETM Programming control register */
 #define CS_ETMV4_PRGCTLR_en     0x01	/**< #CS_ETMV4_PRGCTLR bitfield : ETM trace enabled (disable for programming) */
@@ -388,26 +388,26 @@ Bitfield values for trace configuration register (#CS_ETMV4_CONFIGR)
 #define CS_ETMV4_CONFIGR_DV             0x20000	    /**< Data Value tracing enabled */
 /** @}*/
 
-/** @name ViewInst Control 
+/** @name ViewInst Control
 @{*/
 #define CS_ETMV4_VICTLR         0x080	/**< ViewInst control register */
 #define CS_ETMV4_VIIECTLR       0x084	/**< ViewInst Include/Exclude control register */
 #define CS_ETMV4_VISSCTLR       0x088	/**< ViewInst Start/Stop control register */
 #define CS_ETMV4_VIPSSCTLR      0x08C	/**< ViewInst Start/Stop PE Comparator Control register */
 /** @}*/
-/** @name ViewData Control 
+/** @name ViewData Control
 @{*/
 #define CS_ETMV4_VDCTLR         0x0A0	/**< ViewData Main control register */
 #define CS_ETMV4_VDSACCTLR      0x0A4	/**< ViewData Include/Exclude Single Address comparator control register */
 #define CS_ETMV4_VDARCCTLR      0x0A8	/**< ViewData Include/Exclude Address Range comparator control register */
 /** @}*/
-/** @name Sequencer 
+/** @name Sequencer
 @{*/
 #define CS_ETMV4_SEQEVR(n)     (0x100+(0x4*n)) /**< Sequencer State Transistion Control Register (n) [0-2] */
 #define CS_ETMV4_SEQRSTEVR      0x118	       /**< Sequencer Reset Control Register */
 #define CS_ETMV4_SEQSTR         0x11C	       /**< Sequencer State Register */
 /** @}*/
-/** @name Counters 
+/** @name Counters
 @{*/
 #define CS_ETMV4_CNTRLDVR(n)   (0x140+(0x4*n))	     /**< Counter Reload Register (n) [0-3] */
 #define CS_ETMV4_CNTCTLR(n)    (0x150+(0x4*n))	     /**< Counter Control Register (n) [0-3] */
@@ -416,7 +416,7 @@ Bitfield values for trace configuration register (#CS_ETMV4_CONFIGR)
 #define CS_ETMV4_CNTVR(n)      (0x160+(0x4*n))	     /**< Counter Value Register (n) [0-3] */
 /** @}*/
 
-/** @name Resource Selection Control 
+/** @name Resource Selection Control
 Set of macros defining registers and selection values.
 Also macros to set event values that use selector registers.
 @{*/
@@ -449,7 +449,7 @@ Also macros to set event values that use selector registers.
 #define CS_ETMV4_SSPCICR(n)    (0x2C0+(0x4*n))	     /**< Single Shot PE Comparator Input Control Register (n) [0-7] */
 /** @}*/
 
-/** @name Comparator Resources 
+/** @name Comparator Resources
 @{*/
 #define CS_ETMV4_ACVR(n)      (0x400+(0x8*n))	     /**< Address Comparator Value Register (n) [0-15] (64 bit) */
 #define CS_ETMV4_ACATR(n)     (0x480+(0x8*n))	     /**< Address Comparator Access Type Register (n) [0-15] (64 bit) */
@@ -462,8 +462,8 @@ Also macros to set event values that use selector registers.
 #define CS_ETMV4_VMIDCCTLR0     0x688	/**< VMID comparator control register 0  */
 #define CS_ETMV4_VMIDCCTLR1     0x68C	/**< VMID comparator control register 1  */
 /** @}*/
-/** @name ACATR Bitfields 
-Address Comparator Type register bits. 
+/** @name ACATR Bitfields
+Address Comparator Type register bits.
 @{*/
 #define CS_ETMV4_ACATR_IA           0x0	    /**< Instruction Address Type */
 #define CS_ETMV4_ACATR_DL           0x1	    /**< Data Load Address Type */
@@ -478,6 +478,7 @@ Address Comparator Type register bits.
 
 #define CS_ETMV4_ACATR_ExEL0_S     0x100    /**< Exclude Secure EL0 from comparison */
 #define CS_ETMV4_ACATR_ExEL1_S     0x200    /**< Exclude Secure EL1 from comparison */
+#define CS_ETMV4_ACATR_ExEL2_S     0x400    /**< Exclude Secure EL2 from comparison */
 #define CS_ETMV4_ACATR_ExEL3_S     0x800    /**< Exclude Secure EL3 from comparison */
 
 #define CS_ETMV4_ACATR_ExEL0_NS   0x1000    /**< Exclude Non-Secure EL0 from comparison */
@@ -533,10 +534,10 @@ Values for TRCPDSR. See #CS_ETMv4_PDSR for register info.
 
 /** @} */
 
-/** @defgroup cs_stm_itm CoreSight SW Stimulus device registers 
+/** @defgroup cs_stm_itm CoreSight SW Stimulus device registers
     @ingroup reg_defs
 
-Register definitions and bitfield values for the ITM and STM software stimulus 
+Register definitions and bitfield values for the ITM and STM software stimulus
 trace devices.
 
 @{
@@ -592,7 +593,7 @@ trace devices.
 /** @} */
 
 
-/** @defgroup cs_link_sink CoreSight Trace Sinks and Links device registers 
+/** @defgroup cs_link_sink CoreSight Trace Sinks and Links device registers
     @ingroup reg_defs
 
 Register definitions and bitfield values for the TPIU, ETB, Trace Funnel,
@@ -620,9 +621,9 @@ programmable replicator and TMC trace devices.
 #define CS_SWO_FLFMT_CTRL       0x304	/**< SWO control register */
 /**@}*/
 
-/** @name CoreSight ETB registers 
+/** @name CoreSight ETB registers
 
-ETB: [CoreSight SoC TRM 3.10] - n.b. the register names there are more cryptic 
+ETB: [CoreSight SoC TRM 3.10] - n.b. the register names there are more cryptic
 */
 /**@{*/
 #define CS_ETB_RAM_DEPTH     0x004     /**< ETB RAM Depth Register (in width-units) */
@@ -641,6 +642,7 @@ ETB: [CoreSight SoC TRM 3.10] - n.b. the register names there are more cryptic
 #define CS_ETB_RAM_WRITE_DATA 0x024	/**< ETB RAM Write Data Register */
 #define CS_ETB_FLFMT_STATUS  0x300	/**< ETB Formatter and Flush Status Register */
 #define CS_ETB_FLFMT_CTRL    0x304     /**< ETB Formatter and Flush Control Register */
+#define CS_ETB_PER_SYNC_COUNT 0x308    /**< ETB Period synchronization counter */
 /**@}*/
 
 /** @name ETB FFCR bitfields
@@ -658,14 +660,14 @@ Bitfield definitions for the ETB Formatter and Flush Control Register (#CS_ETB_F
 #define CS_ETB_FLFMT_CTRL_EnFTC     0x0001  /**< Enable Formatting */
 /** @}*/
 
-/** @name ETB FFSR bitfields 
+/** @name ETB FFSR bitfields
 Bitfield definitions for the ETB Formatter and Flush Status Register (#CS_ETB_FLFMT_STATUS).
 @{*/
 #define CS_ETB_FLFMT_STATUS_FtStopped 0x02 /**< Formatter stopped */
 #define CS_ETB_FLFMT_STATUS_FlInProg  0x01 /**< Flush in progress */
 /** @}*/
 
-/** @name CoreSight Trace Memory Controller registers 
+/** @name CoreSight Trace Memory Controller registers
 TMC specific registers - see ETB definitions for common register set between ETB and TMC */
 /**@{*/
 /* TMC */
@@ -711,7 +713,7 @@ TMC specific registers - see ETB definitions for common register set between ETB
 
 /** @} */
 
-/** @defgroup cs_cti CoreSight Cross Trigger registers 
+/** @defgroup cs_cti CoreSight Cross Trigger registers
     @ingroup reg_defs
 
 Register definitions and bitfield values for the Cross Trigger Interface component.
@@ -741,7 +743,7 @@ The cross trigger matrix does not have any programmable elements so needs no reg
 #define CS_CTIITCTRL         0xF00     /**< CTI Integration Mode Control Register */
 
 /** CTI Event channel enable bitfield values.
- 'OR' combine for multiple channel source/sink for event. 
+ 'OR' combine for multiple channel source/sink for event.
  */
 #define CS_CTI_CHAN0_EN     0x01       /**< Enable Channel 0 bitfield value */
 #define CS_CTI_CHAN1_EN     0x02       /**< Enable Channel 1 bitfield  value */
@@ -750,7 +752,7 @@ The cross trigger matrix does not have any programmable elements so needs no reg
 
 /** @} */
 
-/** @defgroup cs_ts_r CoreSight Timestamp Generator registers 
+/** @defgroup cs_ts_r CoreSight Timestamp Generator registers
     @ingroup reg_defs
 
 Register definitions and bitfield values for the Timestamp Generator.
@@ -771,7 +773,7 @@ Register definitions and bitfield values for the Timestamp Generator.
 
 /** @} */
 
-/** @defgroup cs_debug CoreSight Core Debug registers (Arch v7) 
+/** @defgroup cs_debug CoreSight Core Debug registers (Arch v7)
     @ingroup reg_defs
 
 Register definitions and bitfield values for the Architecture v7 Cortex Core debug registers.
@@ -780,7 +782,7 @@ Register definitions and bitfield values for the Architecture v7 Cortex Core deb
 
 /* CPU debug */
 #define CS_DBGDIDR           0x000     /**< Debug ID */
-/** @name DBGDIDR Bit Values 
+/** @name DBGDIDR Bit Values
  see #CS_DBGDIDR
 @{*/
 #define CS_DBGDIDR_PCSR_imp    0x00002000    /**< DBGPCSR is register 33 */
@@ -797,7 +799,7 @@ Register definitions and bitfield values for the Architecture v7 Cortex Core deb
 #define CS_DBGITR            0x084     /**< WO: Instruction Transfer */
 
 #define CS_DBGDSCR           0x088     /**< Debug Status and Control */
-/** @name DBGDSCR Bit Values 
+/** @name DBGDSCR Bit Values
  see #CS_DBGDSCR
 @{*/
 #define CS_DBGDSCR_HALTED       0x00000001   /**< Processor Halted */
@@ -841,7 +843,7 @@ Register definitions and bitfield values for the Architecture v7 Cortex Core deb
 
 #define CS_DBGDTRTX          0x08C     /**< Target to Host Data Transfer */
 #define CS_DBGDRCR           0x090     /**< WO: Debug Run Control (EDRCR in v8) */
-/** @name DBGDRCR Bit Values 
+/** @name DBGDRCR Bit Values
  see #CS_DBGDRCR
 @{*/
 #define CS_DBGDRCR_HRQ         0x00000001   /**< Halt (not v8) */
@@ -862,7 +864,7 @@ Register definitions and bitfield values for the Architecture v7 Cortex Core deb
 #define CS_DBGPRSR_PU          0x01      /**< Device is powered up */
 
 #define CS_DBG_MIDR          0xD00     /**< Copy of MIDR_EL1. (In core PD.) */
-/** @name DBGPRSR Bit Values 
+/** @name DBGPRSR Bit Values
  see #CS_DBGPRSR
 @{*/
 #define CS_DBGPRSR_HALTED      0x0010	   /**< (7.1) Processor Halted */
@@ -874,7 +876,7 @@ Register definitions and bitfield values for the Architecture v7 Cortex Core deb
 
 /** @} */
 
-/** @defgroup cs_debug_v8 CoreSight Core Debug registers (Arch v8) 
+/** @defgroup cs_debug_v8 CoreSight Core Debug registers (Arch v8)
     @ingroup reg_defs
 
 Register definitions and bitfield values for the Architecture v8 Cortex Core debug registers.
@@ -898,7 +900,7 @@ Register definitions and bitfield values for the Architecture v8 Cortex Core deb
 
 #define CS_V8EDPRSR     0x314	    /**< Device Powerdown and Reset Status Register */
 
-/** @name EDPRSR Bit Values 
+/** @name EDPRSR Bit Values
  Also contains masks and access valid values. See #CS_V8EDPRSR
 @{*/
 #define CS_V8EDPRSR_PWRUP       0x0001	    /**< Processor powered up. */
@@ -915,7 +917,7 @@ Register definitions and bitfield values for the Architecture v8 Cortex Core deb
 #define CS_V8EDPFR_l    0xD20	     /**< Processor feature register (lo) . Available ELs */
 #define CS_V8EDDFR_l    0xD28	     /**< Debug Feature register (lo). Defines WP, BP, CTXT etc. */
 #define CS_V8EDDEVID    0xFC8	     /**< Debug Device ID0. PC Sampling Availability */
-/** @name EDDEVID Bit Values 
+/** @name EDDEVID Bit Values
  Also contains masks and access valid values. See #CS_V8EDDEVID
 @{*/
 #define CS_V8EDDEVID_SMPL_MSK       0xF	   /**< Mask for the PC Sample support value */
@@ -926,7 +928,7 @@ Register definitions and bitfield values for the Architecture v8 Cortex Core deb
 
 /** @} */
 
-/** @defgroup cs_pmu CoreSight PMU registers 
+/** @defgroup cs_pmu CoreSight PMU registers
     @ingroup reg_defs
 
 Register definitions and bitfield values for the Performance Monitoring Unit.
@@ -971,7 +973,7 @@ This describes the 32-bit external interface.
 #define CS_PMAUTHSTATUS      0xFB8     /**< Authentication Status Register */
 /** @} */
 
-/** @defgroup cs_memap CoreSight MEM-AP registers 
+/** @defgroup cs_memap CoreSight MEM-AP registers
     @ingroup reg_defs
 
 Register definitions and bitfield values for MEM-AP devices.
