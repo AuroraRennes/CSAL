@@ -3,13 +3,13 @@
  * \brief      CS Access API - Library Initialisation and Management.
  *
  * \copyright  Copyright (C) ARM Limited, 2014. All rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -62,6 +62,8 @@ int cs_shutdown(void);
 */
 int cs_release(void);
 
+/** Reset the number of programming errors detected. */
+void cs_reset_error_count(void);
 
 /** Return the number of programming errors detected so far. */
 unsigned int cs_error_count(void);
@@ -71,7 +73,7 @@ unsigned int cs_error_count(void);
 int cs_checkpoint(void);
 
 
-/** return the version number for the library 
+/** return the version number for the library
  *  version number in form 0xMMNN:
  *  MM - major version number.
  *  NN - minor version number.

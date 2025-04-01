@@ -114,7 +114,7 @@ int cs_diag_set_fd(FILE *fd)
 #ifdef CSAL_MEMAP
 void cs_set_default_memap(cs_device_t dev)
 {
-    if (dev) {    
+    if (dev) {
         assert(cs_device_has_class(dev, CS_DEVCLASS_MEMAP));
         if (DTRACEG) {
             diagf("!Set default MEM-AP\n");
@@ -223,6 +223,12 @@ int cs_release(void)
         }
     }
     return 0;
+}
+
+
+void cs_reset_error_count(void)
+{
+    G.n_api_errors = 0;
 }
 
 unsigned int cs_error_count(void)
