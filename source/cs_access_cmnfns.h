@@ -261,7 +261,7 @@ struct cs_global {
 #ifdef CSAL_MEMAP
     cs_device_t memap_default;     /**< MEM-AP parent for new devices, or NULL */
 #endif
-#ifdef DIAG
+#if DIAG
     FILE *diag_fd;                 /**< Output stream for diagnostics */
 #endif
     unsigned int init_called:1;           /**< cs_init() has been called */
@@ -304,7 +304,7 @@ static inline struct cs_device *cs_get_device_struct(cs_device_t dev)
  * a max() function is a simple OR of global and device settings.
  */
 
-#ifdef DIAG
+#if DIAG
 #define DTRACE(d) ((d)->diag_tracing | (d)->glob->diag_tracing_default)
 #define DTRACEG   (G.diag_tracing_default)
 #else				/* !DIAG */
@@ -338,19 +338,11 @@ typedef int check_mmap_offset_is_big_enough[1 /
 
 #ifdef UNIX_KERNEL
 #undef DIAG
-#endif
-
-#ifdef DIAG
-
-#ifdef UNIX_KERNEL
 #define diagf printk
 #else
 #define diagf cs_diagf
-#endif
+#endif /* UNIX_KERNEL */
 
-#else				/* !DIAG */
-#define diagf cs_diagf
-#endif				/* DIAG */
 /*
   This is the "physical address" value for a non-memory-mapped device, e.g.
   a replicator, that is represented for topology reasons

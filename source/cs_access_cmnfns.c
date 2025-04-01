@@ -24,8 +24,8 @@ struct cs_global G;
 /* iterations for waiting for bits */
 static int wait_iterations = 32;
 
-#ifdef DIAG
 
+#if DIAG
 #define diagfd (G.diag_fd ? G.diag_fd : stderr)
 
 /*
@@ -49,7 +49,7 @@ void cs_diagf(char const *s, ...)
     fflush(diagfd);
 }
 #else
-void cs_diagf(char const *, ...)
+void cs_diagf(char const *s __attribute__((unused)), ...)
 {
 }
 #endif				/* DIAG */
@@ -114,10 +114,10 @@ int cs_report_error(char const *fmt, ...)
 #ifdef UNIX_KERNEL
     printk("** csaccess: %s\n", err_mesg);
 #else
+#if DIAG
     fprintf(diagfd, "** csaccess: ERROR: %s\n", err_mesg);
-#endif
-#ifndef UNIX_KERNEL
     fflush(diagfd);
+#endif
 #endif
     return -1;
 }
@@ -134,11 +134,11 @@ int cs_report_device_error(struct cs_device *d, char const *fmt, ...)
 #ifdef UNIX_KERNEL
     printk("** csaccess(%" CS_PHYSFMT "): %s\n", d->phys_addr, err_mesg);
 #else
+#if DIAG
     fprintf(diagfd, "** csaccess(%" CS_PHYSFMT "): ERROR: %s\n",
 	    d->phys_addr, err_mesg);
-#endif
-#ifndef UNIX_KERNEL
     fflush(diagfd);
+#endif
 #endif
     return -1;
 }
@@ -155,7 +155,7 @@ void cs_device_init(struct cs_device *d, cs_physaddr_t addr)
     d->phys_addr = addr;
     d->affine_cpu = CS_CPU_UNKNOWN;
     d->power_domain = G.power_domain_default;
-#ifdef DIAG
+#if DIAG
     d->diag_tracing = G.diag_tracing_default;
 #endif				/* DIAG */
 #ifdef CSAL_MEMAP

@@ -119,7 +119,7 @@ int cs_device_lock(cs_device_t dev)
 }
 
 
-int cs_device_diag_set(cs_device_t dev, int tracing)
+int cs_device_diag_set(cs_device_t dev __attribute__((unused)), int tracing  __attribute__((unused)))
 {
 #if DIAG
     DEV(dev)->diag_tracing = tracing;

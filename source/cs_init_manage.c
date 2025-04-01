@@ -82,7 +82,7 @@ int cs_init(void)
 
 int cs_diag_set(int n)
 {
-#ifdef DIAG
+#if DIAG
     G.diag_tracing_default = n;
     if (n > 0) {
         diagf("CSAL: tracing set to level %d\n", n);
@@ -99,6 +99,7 @@ int cs_diag_set(int n)
 
 
 #ifdef __STDC_HOSTED__
+#if DIAG
 int cs_diag_set_fd(FILE *fd)
 {
 #ifdef DIAG
@@ -106,6 +107,7 @@ int cs_diag_set_fd(FILE *fd)
 #endif
     return 0;
 }
+#endif
 #endif
 
 
