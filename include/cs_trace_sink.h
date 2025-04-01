@@ -33,6 +33,14 @@ extern "C" {
 /** Check if sink is enabled */
 int cs_sink_is_enabled(cs_device_t dev);
 
+/* Setup ETF */
+int cs_sink_etf_setup(cs_device_t dev, unsigned int mode);
+
+/* Setup ETR */
+int cs_sink_etr_setup(cs_device_t dev, unsigned long hwaddr, size_t size,
+    unsigned int axictl);
+
+
 /**
    Enable a trace sink
 */

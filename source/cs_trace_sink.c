@@ -21,7 +21,124 @@
 #include "cs_topology.h"
 
 /* ---------- Local functions ------------- */
+static int cs_sink_setup_common(cs_device_t dev)
+{
+    int rc;
+    struct cs_device *d = DEV(dev);
+    assert(cs_device_has_class(dev, CS_DEVCLASS_SINK));
 
+    _cs_unlock(d);
+    if (d->type == DEV_ETB || d->type == DEV_ETF) {
+        d->v.etb.currently_reading = 0;
+        if (_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+            /* If the sink is enabled, disable it before configuring */
+            cs_sink_disable(dev);
+        }
+        /* "The RAM Write Pointer Register must be programmed before trace
+           capture is enabled." */
+        rc = cs_empty_trace_buffer(dev);
+        if (rc != 0) {
+            return rc;
+        }
+        return 0;
+    } else {
+        /* The only other sinks would be trace ports, and currently this
+           library doesn't support use cases which have an external
+           trace capture device */
+        return -1;
+    }
+}
+
+int cs_sink_etf_setup(cs_device_t dev, unsigned int mode)
+{
+    int rc;
+    struct cs_device *d = DEV(dev);
+    assert(cs_device_has_class(dev, CS_DEVCLASS_SINK));
+    assert(d->type == DEV_ETF);
+
+    rc = cs_sink_setup_common(dev);
+    if (rc != 0) {
+        return rc;
+    }
+
+    _cs_unlock(d);
+
+    unsigned int flfmt;
+    /* Set up flushing and formatting controls.
+       CS_ETB_FLFMT_CTRL_EnFTC: enable formatting into 16-byte frames,
+       in case there are multiple trace sources.
+       CS_ETB_FLFMT_CTRL_EnFCont: enable continuous formatting (ETB)
+       or enable insertion of triggers (TMC)
+    */
+    flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont;
+    switch (mode) {
+        case CS_TMC_MODE_CIRCULAR:
+            flfmt |= CS_ETB_FLFMT_CTRL_StopFl;
+            break;
+        case CS_TMC_MODE_HWFIFO:
+            _cs_write(d, CS_ETB_BUF_LEVEL_WM, 0x0);
+            break;
+        default:
+            /* Unsupported ETB RAM mode */
+            return -1;
+    }
+
+    _cs_write(d, CS_TMC_MODE, mode);
+    _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
+
+    return 0;
+}
+
+int cs_sink_etr_setup(cs_device_t dev, unsigned long hwaddr, size_t size,
+    unsigned int axictl)
+{
+    int rc;
+    struct cs_device *d = DEV(dev);
+    assert(cs_device_has_class(dev, CS_DEVCLASS_SINK));
+    //assert(d->type == DEV_ETB);
+
+    rc = cs_sink_setup_common(dev);
+    if (rc != 0) {
+        return rc;
+    }
+
+    _cs_unlock(d);
+
+    unsigned int flfmt;
+    /* Set up flushing and formatting controls.
+       CS_ETB_FLFMT_CTRL_EnFTC: enable formatting into 16-byte frames,
+       in case there are multiple trace sources.
+       CS_ETB_FLFMT_CTRL_EnFCont: enable continuous formatting (ETB)
+       or enable insertion of triggers (TMC)
+    */
+    flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont;
+
+    _cs_write(d, CS_ETB_RAM_DEPTH, size / 4);
+
+    /* AXI control configuration fallback settings */
+    if (axictl == 0) {
+        axictl |= CS_ETB_AXICTL_PROT_CTL_B1;
+        axictl |= CS_ETB_AXICTL_AXCACHE_OS;
+        axictl |= CS_ETB_AXICTL_WR_BURST_1;
+    }
+
+    _cs_write(d, CS_ETB_AXICTL, axictl);
+    _cs_write(d, CS_TMC_DBALO, (hwaddr & 0xffffffff));
+    _cs_write(d, CS_TMC_DBAHI, ((hwaddr >> 32) & 0xffffffff));
+    /* Stop on a Flush operation.  For a TMC ETB we don't want to go straight
+       from Running to Disabled, instead we want to Stop the ETB first,
+       then read the data, then disable for reprogramming. */
+    flfmt |= CS_ETB_FLFMT_CTRL_StopFl;
+    flfmt |= CS_ETB_FLFMT_CTRL_EnFTC;
+    flfmt |= CS_ETB_FLFMT_CTRL_EnFCont;
+    flfmt |= CS_ETB_FLFMT_CTRL_FOnFlIn;
+    flfmt |= CS_ETB_FLFMT_CTRL_TrigIn;
+
+    _cs_write(d, CS_TMC_MODE, CS_TMC_MODE_CIRCULAR);
+    _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
+
+    return 0;
+}
 
 /* ========== API functions ================ */
 int cs_sink_is_enabled(cs_device_t dev)
