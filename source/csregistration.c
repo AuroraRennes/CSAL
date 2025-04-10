@@ -1,6 +1,6 @@
 /*
   CoreSight board registration
-  Provides an abstract interface to registering boards with the library 
+  Provides an abstract interface to registering boards with the library
 
   Copyright (C) ARM Limited, 2013. All rights reserved.
 
@@ -126,7 +126,7 @@ static int do_registration(const struct board *board,
     return 0;
 }
 
-static int initilise_board(const struct board **board,
+static int initialize_board(const struct board **board,
                            struct cs_devices_t *devices)
 {
     if (cs_init() < 0) {
@@ -162,7 +162,7 @@ int setup_board(const struct board **board, struct cs_devices_t *devices,
     *board = &board_list[0];
 #endif
 
-    return initilise_board(board, devices);
+    return initialize_board(board, devices);
 }
 
 int setup_named_board(const char *board_name, const struct board **board,
@@ -195,5 +195,5 @@ int setup_named_board(const char *board_name, const struct board **board,
         return -1;
     }
 
-    return initilise_board(board, devices);
+    return initialize_board(board, devices);
 }
