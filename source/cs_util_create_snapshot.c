@@ -1,11 +1,11 @@
 /*
   CoreSight Access Library Utilities
-   
-  Set of auxiliary functions that are used by demo code but re-useable in 
+
+  Set of auxiliary functions that are used by demo code but re-useable in
   user applications. The functions cover board detection and libary registration,
   and extraction of trace data and creation of a snapshot for DS-5.
 
-  
+
   Copyright (C) ARM Limited, 2015-2016. All rights reserved.
 
   Licensed under the Apache License, Version 2.0 (the "License");
@@ -276,6 +276,9 @@ static void do_fetch_trace_etb(cs_device_t etb, char const *name,
         printf("  Buffer has wrapped: %d\n", cs_buffer_has_wrapped(etb));
     }
     buf = (unsigned char *)malloc(len);
+    if (!buf) {
+        fprintf(stderr, "** malloc for trace buffer failed\n");
+    }
     n = cs_get_trace_data(etb, buf, len);
     if (n <= 0) {
         fprintf(stderr, "** failed to get trace, rc=%d\n", n);
@@ -307,6 +310,11 @@ static void do_fetch_trace_etb(cs_device_t etb, char const *name,
             fwrite(buf, n, 1, fd);
             fclose(fd);
         }
+    }
+
+    /* Free trace buffer */
+    if (buf) {
+        free(buf);
     }
 }
 
