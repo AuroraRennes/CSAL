@@ -426,7 +426,7 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
         } else if (devarch != 0) {
             if ((devarch & 0xFFFF) == CS_ARM_ARCHID_MEMAP) {
                 unsigned int cfg = _cs_read(d, CS_MEMAP_CFG);
-                d->devclass |= CS_DEVCLASS_MEMAP;                
+                d->devclass |= CS_DEVCLASS_MEMAP;
                 d->v.memap.DAR_present = (((cfg >> 4) & 0xF) == 0xA);
                 d->v.memap.memap_LPAE = (cfg >> 1) & 1;
             } else {
@@ -788,7 +788,10 @@ static int cs_device_outport_is_valid(struct cs_device *d, unsigned int p)
 
 static int cs_device_inport_is_valid(struct cs_device *d, unsigned int p)
 {
-    return cs_device_has_atb_in(d) && p < d->n_in_ports;
+    if (!(p < d->n_in_ports)) {
+        diagf("!!! invalid inport number: %d (max: %d), ignored\n", p, d->n_in_ports);
+    }
+    return cs_device_has_atb_in(d);
 }
 #endif
 /* ========== API functions ================ */
