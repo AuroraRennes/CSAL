@@ -134,7 +134,7 @@ int cs_shutdown(void)
 {
     if (G.init_called) {
         /* Do anything that needs memory-mapped access */
-        cs_release();      /* claim tags released here */
+        // cs_release();      /* claim tags released here */
         cs_checkpoint();
 #ifdef UNIX_USERSPACE
         /* Now remove memory-mapped access */
