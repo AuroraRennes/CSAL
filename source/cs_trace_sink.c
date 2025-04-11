@@ -198,7 +198,7 @@ int cs_sink_enable(cs_device_t dev)
 int cs_sink_disable(cs_device_t dev)
 {
     int rc;
-    // int mode;
+    int mode;
     struct cs_device *d = DEV(dev);
 
     assert(cs_device_has_class(dev, CS_DEVCLASS_SINK));
@@ -218,16 +218,36 @@ int cs_sink_disable(cs_device_t dev)
         /* Stopping and flushing the SWO is not supported */
         return -1;
     } else if (d->type == DEV_ETB || d->type == DEV_ETF) {
-        // mode = _cs_read(d, CS_TMC_MODE);
-        // if (mode == CS_TMC_MODE_HWFIFO &&
-        //     _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
-        //     /* Set StopOnFl */
-        //     _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
-        //     /* Set FlushMan to flush and stop */
-        //     _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
-        //     /* Wait until TMCReady is equal to one. */
-        //     _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
-        // }
+        mode = _cs_read(d, CS_TMC_MODE);
+        /* TODO: Same as tmc_hw_fifo_disable? */
+        if (mode == CS_TMC_MODE_HWFIFO &&
+            _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+            /* Set StopOnFl */
+            _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
+            /* Set FlushMan to flush and stop */
+            _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+            /* Wait until TMCReady is equal to one. */
+            _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+        } else if (mode == CS_TMC_MODE_SWFIFO &&
+            _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+            /* TODO: Basically the same as above + flush? */
+            /* Set StopOnFl */
+            _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
+            /* Set FlushMan to flush and stop */
+            _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+            /* Wait until TMCReady is equal to one. */
+
+            /* TODO: Flushing the complete ram data and displaying it? */
+            fprintf(stderr, "** flushing... \n");
+            while(1) {
+                unsigned int reg = _cs_read(d, CS_ETB_RAM_DATA);
+                if (reg == 0xFFFFFFFF) {
+                    if (_cs_isset(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady)) { break; }
+                } else {
+                    fprintf(stderr, "%08x\n", reg);
+                }
+            }
+        }
         /* ETB or TMC */
         if (d->v.etb.is_tmc_device &&
             _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
@@ -612,7 +632,10 @@ unsigned int cs_get_buffer_rwp(cs_device_t dev)
   return _cs_read(d, CS_ETB_RAM_WR_PTR);
 }
 
-
+/**
+Enables a TMC component as a HW FIFO
+TODO: Check for redundancy with the base cs_sink_enable
+*/
 int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
 {
   unsigned int flfmt;
