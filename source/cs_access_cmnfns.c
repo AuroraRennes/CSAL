@@ -17,6 +17,7 @@
 */
 
 #include "cs_access_cmnfns.h"
+#include "cs_map_local.h"
 
 /* Declare the global library information structure */
 struct cs_global G;
@@ -144,6 +145,12 @@ int cs_report_device_error(struct cs_device *d, char const *fmt, ...)
 }
 
 
+/* Unmap the local memory, effecively unregistering the device */
+void cs_device_unregister(struct cs_device *d)
+{
+    _cs_unmap(d);
+}
+
 /*
  * Initialize a device object.
  */
@@ -176,6 +183,7 @@ struct cs_device *cs_device_new(cs_physaddr_t addr,
 	(struct cs_device *) malloc(sizeof(struct cs_device));
     cs_device_init(d, addr);
     d->local_addr = (unsigned char volatile *)local_addr;
+    d->ops.unregister = cs_device_unregister;
     d->next = G.device_top;
     G.device_top = d;
     ++G.n_devices;
