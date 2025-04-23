@@ -134,6 +134,7 @@ int cs_shutdown(void)
 {
     if (G.init_called) {
         /* Do anything that needs memory-mapped access */
+        // FIXME: Empty devices try to claim back tag, breaking on this function
         // cs_release();      /* claim tags released here */
         cs_checkpoint();
 #ifdef UNIX_USERSPACE
