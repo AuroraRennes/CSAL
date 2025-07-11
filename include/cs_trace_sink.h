@@ -73,6 +73,9 @@ int cs_set_buffer_trigger_counter(cs_device_t dev, unsigned int bytes);
 /** Check whether the buffer has wrapped since being initialized */
 int cs_buffer_has_wrapped(cs_device_t dev);
 
+/** Read trace buffer RAM Write Pointer (RWP) register */
+unsigned int cs_get_buffer_rwp(cs_device_t dev);
+
 /** Get number of bytes that have not yet been destructively read from the buffer */
 int cs_get_buffer_unread_bytes(cs_device_t dev);
 
