@@ -605,12 +605,45 @@ programmable replicator and TMC trace devices.
 /** @name CoreSight TPIU registers */
 /**@{*/
 
-#define CS_TPIU_FLFMT_STATUS    0x300	/**< TPIU status register  */
-#define CS_TPIU_FLFMT_STATUS_FtStopped 0x02    /**< TPIU status bitfield: Formatter stopped */
-#define CS_TPIU_FLFMT_STATUS_FlInProg  0x01    /**< TPIU status bitfield: Flush in progress */
-#define CS_TPIU_FLFMT_CTRL      0x304	/**< TPIU control register  */
-#define CS_TPIU_FLFMT_CTRL_StopFl   0x1000     /**< TPIU control bitfield:  Stop when flush completes */
-#define CS_TPIU_FLFMT_CTRL_FOnMan   0x0040     /**< TPIU control bitfield:  Initiate a flush */
+#define CS_TPIU_SPORTSIZE              0x000   /**< TPIU supported port size register */
+#define CS_TPIU_CPORTSIZE              0x004   /**< TPIU current port size register */
+#define CS_TPIU_TRIGMODES              0x100   /**< TPIU supported trigger modes */
+#define CS_TPIU_TRIG_TrgRun            (1<<17) /**< Trigger Counter running */
+#define CS_TPIU_TRIG_Triggered         (1<<16) /**< Trigger Counter has reached zero */
+#define CS_TPIU_TRIG_TCount8           (1<<8)  /**< 8 bit counter register implemented */
+#define CS_TPIU_TRIG_Mult64k           (1<<4)  /**< Multiply by 64k supported */
+#define CS_TPIU_TRIG_Mult256           (1<<3)  /**< Multiply by 256 supported */
+#define CS_TPIU_TRIG_Mult16            (1<<2)  /**< Multiply by 16 supported */
+#define CS_TPIU_TRIG_Mult4             (1<<1)  /**< Multiply by 4 supported */
+#define CS_TPIU_TRIG_Mult2             (1<<0)  /**< Multiply by 2 supported */
+#define CS_TPIU_TRIGCOUNT              0x104   /**< TPIU trigger delay counter */
+#define CS_TPIU_TRIGMULT               0x108   /**< TPIU trigger multiplier */
+#define CS_TPIU_STEST                  0x200   /**< TPIU supported test patterns register  */
+#define CS_TPIU_CTEST                  0x204   /**< TPIU current test patterns register  */
+#define CS_TPIU_TEST_PContEn           (1<<17) /**< TPIU test pattern: Continuous mode */
+#define CS_TPIU_TEST_PTimeEn           (1<<16) /**< TPIU test pattern: Timed mode */
+#define CS_TPIU_TEST_PatF0             (1<<3)  /**< TPIU test pattern: FF/00 */
+#define CS_TPIU_TEST_PatA5             (1<<2)  /**< TPIU test pattern: AA/55 */
+#define CS_TPIU_TEST_PatW0             (1<<1)  /**< TPIU test pattern: Walking 0s */
+#define CS_TPIU_TEST_PatW1             (1<<0)  /**< TPIU test pattern: Walking 1s */
+#define CS_TPIU_TESTCOUNT              0x208   /**< TPIU test pattern repeat counter register  */
+#define CS_TPIU_FLFMT_STATUS           0x300   /**< TPIU status register  */
+#define CS_TPIU_FLFMT_STATUS_TCPresent (1<<2)  /**< TPIU status bitfield: TRACECTL present */
+#define CS_TPIU_FLFMT_STATUS_FtStopped (1<<1)  /**< TPIU status bitfield: Formatter stopped */
+#define CS_TPIU_FLFMT_STATUS_FlInProg  (1<<0)  /**< TPIU status bitfield: Flush in progress */
+#define CS_TPIU_FLFMT_CTRL             0x304   /**< TPIU control register  */
+#define CS_TPIU_FLFMT_CTRL_StopTrig    (1<<13) /**< TPIU control bitfield: Stop on trigger*/
+#define CS_TPIU_FLFMT_CTRL_StopFl      (1<<12) /**< TPIU control bitfield: Stop when flush completes */
+#define CS_TPIU_FLFMT_CTRL_TrigFl      (1<<10) /**< TPIU control bitfield: Trigger on flush completion */
+#define CS_TPIU_FLFMT_CTRL_TrigEvt     (1<<9)  /**< TPIU control bitfield: Trigger on trigger event */
+#define CS_TPIU_FLFMT_CTRL_TrigIn      (1<<8)  /**< TPIU control bitfield: Trigger on TRIGIN */
+#define CS_TPIU_FLFMT_CTRL_FOnMan      (1<<6)  /**< TPIU control bitfield: Initiate a flush */
+#define CS_TPIU_FLFMT_CTRL_FOnTrig     (1<<5)  /**< TPIU control bitfield: Flush on trigger event */
+#define CS_TPIU_FLFMT_CTRL_FOnFlIn     (1<<4)  /**< TPIU control bitfield: Flush on FLUSHIN */
+#define CS_TPIU_FLFMT_CTRL_EnFCont     (1<<1)  /**< TPIU control bitfield: Continuous formatting */
+#define CS_TPIU_FLFMT_CTRL_EnFTC       (1<<0)  /**< TPIU control bitfield: Enable formatting */
+#define CS_TPIU_FLFMT_SYNC             0x308   /**< TPIU formatter synchronisation counter*/
+#define CS_TPIU_FLFMT_SYNC_MASK        ((1<<12)-1)
 
 /**@}*/
 

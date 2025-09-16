@@ -67,6 +67,7 @@ struct cs_devices_t {
     cs_device_t itm;   /**< SWSTIM source on the system (ITM or STM). */
     cs_device_t etb;   /**< ETB style trace buffer (ETB/ETF) for the cores and optionally SWSTIM source. */
     cs_device_t itm_etb;  /**< if non-NULL, alternate ETB for the SWSTIM source if not captured in main ETB. */
+    cs_device_t tpiu;    /**< TPIU interface with PL through EMIO */
     cs_device_t trace_sinks[LIB_CSREG_MAX_TRACE_SINKS];	  /**< Additional sinks (for later library expansion) */
     cs_device_t trace_alt_srcs[LIB_CSREG_MAX_TRACE_ALT_SRC];  /**< Additional none-cores sources (for later library expansion) */
     unsigned int num_trace_sinks; /**< Number of trace sinks */
