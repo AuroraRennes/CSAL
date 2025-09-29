@@ -186,7 +186,11 @@ int cs_sink_enable(cs_device_t dev)
         }
         _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
         return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
-    } else {
+    } else if(d -> type ==  DEV_TPIU){
+        _cs_write_wo(d, CS_TPIU_CPORTSIZE, 1 << 31); // Set port size to 32
+        _cs_write(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_EnFTC | CS_TPIU_FLFMT_CTRL_EnFCont );
+        return 0;
+    }  else {
         /* The only other sinks would be trace ports, and currently this
            library doesn't support use cases which have an external
            trace capture device */
@@ -634,7 +638,6 @@ unsigned int cs_get_buffer_rwp(cs_device_t dev)
 
 /**
 Enables a TMC component as a HW FIFO
-TODO: Check for redundancy with the base cs_sink_enable
 */
 int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
 {
