@@ -187,8 +187,14 @@ int cs_sink_enable(cs_device_t dev)
         _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
         return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
     } else if(d -> type ==  DEV_TPIU){
-        _cs_write_wo(d, CS_TPIU_CPORTSIZE, 1 << 31); // Set port size to 32
-        _cs_write(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_EnFTC | CS_TPIU_FLFMT_CTRL_EnFCont );
+        _cs_wait(d, CS_TPIU_FLFMT_STATUS, CS_TPIU_FLFMT_STATUS_FtStopped);
+        _cs_write_wo(d, CS_TPIU_CPORTSIZE, 1 << 31);  /* 32-bit port */
+
+        /* Clear StopFl, then enable formatting */
+        _cs_clear(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_StopFl);
+        _cs_set(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_EnFTC | CS_TPIU_FLFMT_CTRL_EnFCont);
+
+        _cs_waitnot(d, CS_TPIU_FLFMT_STATUS, CS_TPIU_FLFMT_STATUS_FtStopped);
         return 0;
     }  else {
         /* The only other sinks would be trace ports, and currently this
@@ -667,7 +673,11 @@ int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
   _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
   _cs_write(d, CS_TMC_BUFWM, bufwm);
 
-  return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+  int rc = _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+  if (rc != 0) return rc;
+  /* Wait until sink is actively capturing — TMCReady deasserts */
+  _cs_waitnot(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  return 0;
 }
 
 int cs_tmc_hw_fifo_disable(cs_device_t dev){
