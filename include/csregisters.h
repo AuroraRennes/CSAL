@@ -390,7 +390,19 @@ Bitfield values for trace configuration register (#CS_ETMV4_CONFIGR)
 
 /** @name ViewInst Control
 @{*/
-#define CS_ETMV4_VICTLR         0x080	/**< ViewInst control register */
+#define CS_ETMV4_VICTLR           0x080       /**< ViewInst control register */
+#define CS_ETMV4_VICTLR_ALWAYS    0x1         /**< Always trace */
+#define CS_ETMV4_VICTLR_SSSTATUS  (0x1 << 9)  /**< Start/stoppe state */
+#define CS_ETMV4_VICTLR_ExEL0_S   (0x1 << 16) /**< Exclude Secure EL0 from comparison */
+#define CS_ETMV4_VICTLR_ExEL1_S   (0x1 << 17) /**< Exclude Secure EL1 from comparison */
+#define CS_ETMV4_VICTLR_ExEL2_S   (0x1 << 18) /**< Exclude Secure EL2 from comparison */
+#define CS_ETMV4_VICTLR_ExEL3_S   (0x1 << 19) /**< Exclude Secure EL3 from comparison */
+
+#define CS_ETMV4_VICTLR_ExEL0_NS  (0x1 << 20) /**< Exclude Non-Secure EL0 from comparison */
+#define CS_ETMV4_VICTLR_ExEL1_NS  (0x1 << 21) /**< Exclude Non-Secure EL1 from comparison */
+#define CS_ETMV4_VICTLR_ExEL2_NS  (0x1 << 22) /**< Exclude Non-Secure EL2 from comparison */
+
+
 #define CS_ETMV4_VIIECTLR       0x084	/**< ViewInst Include/Exclude control register */
 #define CS_ETMV4_VISSCTLR       0x088	/**< ViewInst Start/Stop control register */
 #define CS_ETMV4_VIPSSCTLR      0x08C	/**< ViewInst Start/Stop PE Comparator Control register */
