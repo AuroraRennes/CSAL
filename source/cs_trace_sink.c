@@ -177,7 +177,7 @@ int cs_sink_enable(cs_device_t dev)
            CS_ETB_FLFMT_CTRL_EnFCont: enable continuous formatting (ETB)
            or enable insertion of triggers (TMC)
         */
-        flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont;
+        flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont | CS_ETB_FLFMT_CTRL_FOnFlIn;
         if (d->v.etb.is_tmc_device) {
             /* Stop on a Flush operation.  For a TMC ETB we don't want to go straight
                from Running to Disabled, instead we want to Stop the ETB first,
@@ -192,7 +192,7 @@ int cs_sink_enable(cs_device_t dev)
 
         /* Clear StopFl, then enable formatting */
         _cs_clear(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_StopFl);
-        _cs_set(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_EnFTC | CS_TPIU_FLFMT_CTRL_EnFCont);
+        _cs_set(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_EnFTC | CS_TPIU_FLFMT_CTRL_EnFCont | CS_TPIU_FLFMT_CTRL_FOnFlIn);
 
         _cs_waitnot(d, CS_TPIU_FLFMT_STATUS, CS_TPIU_FLFMT_STATUS_FtStopped);
         return 0;
@@ -669,7 +669,7 @@ int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
             in case there are multiple trace sources.
         CS_ETB_FLFMT_CTRL_EnFCont: enable insertion of triggers (TMC)
   */
-  flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont;
+  flfmt = CS_ETB_FLFMT_CTRL_EnFTC | CS_ETB_FLFMT_CTRL_EnFCont | CS_ETB_FLFMT_CTRL_FOnFlIn;
   _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
   _cs_write(d, CS_TMC_BUFWM, bufwm);
 
