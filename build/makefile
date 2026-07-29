@@ -36,6 +36,14 @@ include ../makefile-arch.inc
 CC=$(CROSS_COMPILE)gcc
 CFLAGS=-Wall -Wpedantic -Wextra -Wno-switch -Werror
 
+# Build legacy unsuffixed aliases for 32-bit register access by default.
+CSAL_LEGACY32 ?= 1
+CFLAGS+=-DCSAL_LEGACY32=$(CSAL_LEGACY32)
+
+# Do not warn about the legacy API unless explicitly requested.
+CSAL_WARN_DEPRECATED ?= 0
+CFLAGS+=-DCSAL_WARN_DEPRECATED=$(CSAL_WARN_DEPRECATED)
+
 LIB_DIR = ../lib/$(ARCH)/rel
 LIB_DIR_BM=../lib/$(ARCH)/rel_bm
 LIB_NAME=csaccess
@@ -224,4 +232,3 @@ clean_objs:
 	#rm -fr $(SO_OBJS_UTIL) $(SO_DEPS_UTIL)
 	rm -fr $(BUILD_DIR)/a/*.o $(BUILD_DIR)/a/*.d
 	rm -fr $(BUILD_DIR)/so/*.o $(BUILD_DIR)/so/*.d
-

@@ -46,11 +46,11 @@ int _cs_path_enable(struct cs_device *d, int enabled)
                 _cs_path_enable(od, enabled);
                 if (!cs_device_is_non_mmio(od)) {
                     _cs_unlock(od);
-                    rc = _cs_set_mask(od, CS_FUNNEL_CTRL, (1U << od_in_port),
+                    rc = _cs_set32_mask(od, CS_FUNNEL_CTRL, (1U << od_in_port),
                                       (enabled << od_in_port));
                     if (DTRACE(od)) {
                         diagf("!funnel inputs now %08X\n",
-                              _cs_read(od, CS_FUNNEL_CTRL));
+                              _cs_read32(od, CS_FUNNEL_CTRL));
                     }
                     if (rc != 0) {
                         break;
@@ -84,14 +84,14 @@ int cs_set_trace_source_id(cs_device_t dev, cs_atid_t id)
             return rc;
         }
         if (CS_ETMVERSION_MAJOR(_cs_etm_version(d)) >= CS_ETMVERSION_ETMv4) {
-            _cs_write(d, CS_ETMV4_TRACEIDR, id);
+            _cs_write32(d, CS_ETMV4_TRACEIDR, id);
         } else
-            _cs_write(d, CS_ETMTRACEIDR, id);
+            _cs_write32(d, CS_ETMTRACEIDR, id);
     } else if ((d->type == DEV_ITM) || (d->type == DEV_STM)) {
         _cs_swstim_set_trace_id(d, id);
     } else if (d->type == DEV_ELA) {
         /* We've already asserted that it's a trace source */
-        _cs_set_mask(d, CS_ELA_ATBCTRL, CS_ELA_ATBCTRL_ATID_VALUE, (id << CS_ELA_ATBCTRL_ATID_VALUE_SHIFT));
+        _cs_set32_mask(d, CS_ELA_ATBCTRL, CS_ELA_ATBCTRL_ATID_VALUE, (id << CS_ELA_ATBCTRL_ATID_VALUE_SHIFT));
     } else {
         return cs_report_device_error(d, "device does not support trace source id");
     }
@@ -111,14 +111,14 @@ cs_atid_t cs_get_trace_source_id(cs_device_t dev)
     assert(cs_device_has_class(dev, CS_DEVCLASS_SOURCE));
     if (cs_device_has_class(dev, CS_DEVCLASS_CPU)) {
         if (CS_ETMVERSION_MAJOR(_cs_etm_version(d)) >= CS_ETMVERSION_ETMv4) {
-            id = _cs_read(d, CS_ETMV4_TRACEIDR);
+            id = _cs_read32(d, CS_ETMV4_TRACEIDR);
         } else {
-            id = _cs_read(d, CS_ETMTRACEIDR);
+            id = _cs_read32(d, CS_ETMTRACEIDR);
         }
     } else if (d->type == DEV_ITM) {
-        id = (_cs_read(d, CS_ITM_CTRL) >> 16) & 0x7F;
+        id = (_cs_read32(d, CS_ITM_CTRL) >> 16) & 0x7F;
     } else if (d->type == DEV_STM) {
-        id = (_cs_read(d, CS_STM_TCSR) >> 16) & 0x7F;
+        id = (_cs_read32(d, CS_STM_TCSR) >> 16) & 0x7F;
     } else {
         /* can't read source id from this device */
     }
@@ -139,7 +139,7 @@ int cs_trace_enable(cs_device_t dev)
             return rc;
         }
         if (_cs_etm_version(d) < CS_ETMVERSION_PTM) {
-            _cs_set(d, CS_ETMCR, CS_ETMCR_ETMEN); /* ETM v3 only */
+            _cs_set32(d, CS_ETMCR, CS_ETMCR_ETMEN); /* ETM v3 only */
         } else {
             /* on PTM that bit is reserved */
         }
@@ -160,9 +160,9 @@ int cs_trace_is_enabled(cs_device_t dev)
     if (cs_device_has_class(dev, CS_DEVCLASS_CPU)) {
         if (CS_ETMVERSION_MAJOR(_cs_etm_version(d)) >= CS_ETMVERSION_ETMv4) {
             is_enabled =
-                    _cs_isset(d, CS_ETMV4_PRGCTLR, CS_ETMV4_PRGCTLR_en);
+                    _cs_isset32(d, CS_ETMV4_PRGCTLR, CS_ETMV4_PRGCTLR_en);
         } else {
-            is_enabled = !_cs_isset(d, CS_ETMCR, CS_ETMCR_ProgBit);
+            is_enabled = !_cs_isset32(d, CS_ETMCR, CS_ETMCR_ProgBit);
         }
     }
     return is_enabled;
@@ -183,7 +183,7 @@ int cs_trace_disable(cs_device_t dev)
         } else {
             /* ETM/PTM */
             if (_cs_etm_version(d) < CS_ETMVERSION_PTM) {
-                _cs_clear(d, CS_ETMCR, CS_ETMCR_ETMEN);
+                _cs_clear32(d, CS_ETMCR, CS_ETMCR_ETMEN);
             } else {
                 /* on PTM that bit is reserved */
             }
@@ -193,8 +193,8 @@ int cs_trace_disable(cs_device_t dev)
                "This bit remains 0 while there is any data in the FIFO.  This ensures
                that the FIFO is empty before you can reprogram the PTM."
                So to flush the FIFO we just set ProgBit and wait for it. */
-            _cs_set(d, CS_ETMCR, CS_ETMCR_ProgBit);
-            _cs_wait(d, CS_ETMSTATUS, CS_ETMSR_ProgBit);
+            _cs_set32(d, CS_ETMCR, CS_ETMCR_ProgBit);
+            _cs_wait32(d, CS_ETMSTATUS, CS_ETMSR_ProgBit);
         }
     } else if ((d->type == DEV_ITM) || (d->type == DEV_STM)) {
         _cs_swstim_trace_disable(d);
@@ -213,24 +213,24 @@ int cs_trace_enable_timestamps(cs_device_t dev, int enabled)
     struct cs_device *d = DEV(dev);
     if (d->type == DEV_ITM) {
         _cs_unlock(d);
-        _cs_set_bit(d, CS_ITM_CTRL, CS_ITM_CTRL_TSSEn, enabled);
+        _cs_set32_bit(d, CS_ITM_CTRL, CS_ITM_CTRL_TSSEn, enabled);
         if (DTRACE(d)) {
             diagf("ITM control register: %08X\n",
-                  _cs_read(d, CS_ITM_CTRL));
+                  _cs_read32(d, CS_ITM_CTRL));
         }
         return 0;
     } else if (d->type == DEV_STM) {
         _cs_unlock(d);
-        _cs_set_bit(d, CS_STM_TCSR, CS_STM_TCSR_TSEN, enabled);
+        _cs_set32_bit(d, CS_STM_TCSR, CS_STM_TCSR_TSEN, enabled);
         return 0;
     } else if (d->type == DEV_ETM) {
         /* We assume that the ETM is in programming mode */
         _cs_unlock(d);
         if (CS_ETMVERSION_MAJOR(_cs_etm_version(d)) >= CS_ETMVERSION_ETMv4) {
-            return _cs_set_bit(d, CS_ETMV4_CONFIGR, CS_ETMV4_CONFIGR_TS,
+            return _cs_set32_bit(d, CS_ETMV4_CONFIGR, CS_ETMV4_CONFIGR_TS,
                                enabled);
         } else {
-            return _cs_set_bit(d, CS_ETMCR, CS_ETMCR_TSEn, enabled);
+            return _cs_set32_bit(d, CS_ETMCR, CS_ETMCR_TSEn, enabled);
         }
     } else if (d->type == DEV_TS) {
         return _cs_tsgen_enable(d, enabled);
@@ -250,14 +250,14 @@ int cs_trace_enable_cycle_accurate(cs_device_t dev, int enable)
             /* "TRCCCCTLR... must be programmed if TRCCONFIGR_CCI==1." */
             if (enable) {
                 unsigned int const CCITMIN =
-                        _cs_read(d, CS_ETMv4_IDR3) & 0xfff;
-                _cs_write(d, CS_ETMV4_CCCTLR, CCITMIN);
+                        _cs_read32(d, CS_ETMv4_IDR3) & 0xfff;
+                _cs_write32(d, CS_ETMV4_CCCTLR, CCITMIN);
             }
             /* enable cycle count on instruction trace */
-            return _cs_set_bit(d, CS_ETMV4_CONFIGR, CS_ETMV4_CONFIGR_CCI,
+            return _cs_set32_bit(d, CS_ETMV4_CONFIGR, CS_ETMV4_CONFIGR_CCI,
                                enable);
         } else {
-            return _cs_set_bit(d, CS_ETMCR, CS_ETMCR_CycleAccurate,
+            return _cs_set32_bit(d, CS_ETMCR, CS_ETMCR_CycleAccurate,
                                enable);
         }
     } else {
@@ -278,7 +278,7 @@ int cs_replicator_set_filter(cs_device_t dev, unsigned int outport,
     }
     filter &= 0xFF;
     _cs_unlock(d);
-    return _cs_write(d, CS_REPLICATOR_IDFILTER(outport), filter);
+    return _cs_write32(d, CS_REPLICATOR_IDFILTER(outport), filter);
 }
 
 

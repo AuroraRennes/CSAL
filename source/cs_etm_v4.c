@@ -35,17 +35,17 @@ int _cs_etm_v4_static_config_init(struct cs_device *d)
     /* set the ext pointer to the etmv4 static structure */
     d->v.etm.sc.p_cfg_ext = &(d->v.etm.sc_ex.etmv4_sc);
     d->v.etm.sc_ex.etmv4_sc.idr1.reg = d->v.etm.etmidr;
-    d->v.etm.sc_ex.etmv4_sc.idr0.reg = _cs_read(d, CS_ETMv4_IDR0);
-    d->v.etm.sc_ex.etmv4_sc.idr2.reg = _cs_read(d, CS_ETMv4_IDR2);
-    d->v.etm.sc_ex.etmv4_sc.idr3.reg = _cs_read(d, CS_ETMv4_IDR3);
-    d->v.etm.sc_ex.etmv4_sc.idr4.reg = _cs_read(d, CS_ETMv4_IDR4);
-    d->v.etm.sc_ex.etmv4_sc.idr5.reg = _cs_read(d, CS_ETMv4_IDR5);
-    d->v.etm.sc_ex.etmv4_sc.idr8 = _cs_read(d, CS_ETMv4_IDR8);
-    d->v.etm.sc_ex.etmv4_sc.idr9 = _cs_read(d, CS_ETMv4_IDR9);
-    d->v.etm.sc_ex.etmv4_sc.idr10 = _cs_read(d, CS_ETMv4_IDR10);
-    d->v.etm.sc_ex.etmv4_sc.idr11 = _cs_read(d, CS_ETMv4_IDR11);
-    d->v.etm.sc_ex.etmv4_sc.idr12 = _cs_read(d, CS_ETMv4_IDR12);
-    d->v.etm.sc_ex.etmv4_sc.idr13 = _cs_read(d, CS_ETMv4_IDR13);
+    d->v.etm.sc_ex.etmv4_sc.idr0.reg = _cs_read32(d, CS_ETMv4_IDR0);
+    d->v.etm.sc_ex.etmv4_sc.idr2.reg = _cs_read32(d, CS_ETMv4_IDR2);
+    d->v.etm.sc_ex.etmv4_sc.idr3.reg = _cs_read32(d, CS_ETMv4_IDR3);
+    d->v.etm.sc_ex.etmv4_sc.idr4.reg = _cs_read32(d, CS_ETMv4_IDR4);
+    d->v.etm.sc_ex.etmv4_sc.idr5.reg = _cs_read32(d, CS_ETMv4_IDR5);
+    d->v.etm.sc_ex.etmv4_sc.idr8 = _cs_read32(d, CS_ETMv4_IDR8);
+    d->v.etm.sc_ex.etmv4_sc.idr9 = _cs_read32(d, CS_ETMv4_IDR9);
+    d->v.etm.sc_ex.etmv4_sc.idr10 = _cs_read32(d, CS_ETMv4_IDR10);
+    d->v.etm.sc_ex.etmv4_sc.idr11 = _cs_read32(d, CS_ETMv4_IDR11);
+    d->v.etm.sc_ex.etmv4_sc.idr12 = _cs_read32(d, CS_ETMv4_IDR12);
+    d->v.etm.sc_ex.etmv4_sc.idr13 = _cs_read32(d, CS_ETMv4_IDR13);
     return 0;
 }
 
@@ -85,43 +85,43 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
 
     /* general configuration */
     if (c->flags & CS_ETMC_CONFIG) {
-        c->configr.reg = _cs_read(d, CS_ETMV4_CONFIGR);
+        c->configr.reg = _cs_read32(d, CS_ETMV4_CONFIGR);
 
         /* read if implemented */
         if (c->scv4->idr3.bits.stallctl) {
-            c->stallcrlr = _cs_read(d, CS_ETMV4_STALLCTLR);
+            c->stallcrlr = _cs_read32(d, CS_ETMV4_STALLCTLR);
         }
-        c->syncpr = _cs_read(d, CS_ETMV4_SYNCPR);
+        c->syncpr = _cs_read32(d, CS_ETMV4_SYNCPR);
         if (c->scv4->idr0.bits.trccci) {
-            c->ccctlr = _cs_read(d, CS_ETMV4_CCCTLR);
+            c->ccctlr = _cs_read32(d, CS_ETMV4_CCCTLR);
         }
         if ((c->scv4->idr0.bits.trcbb == 1) && (c->scv4->idr4.bits.numacpairs > 0)) {
-            c->bbctlr = _cs_read(d, CS_ETMV4_BBCTLR);
+            c->bbctlr = _cs_read32(d, CS_ETMV4_BBCTLR);
         }
         if (c->scv4->idr0.bits.qfilt) {
-            c->qctlr = _cs_read(d, CS_ETMV4_QCTLR);
+            c->qctlr = _cs_read32(d, CS_ETMV4_QCTLR);
         }
-        c->traceidr = _cs_read(d, CS_ETMV4_TRACEIDR);
+        c->traceidr = _cs_read32(d, CS_ETMV4_TRACEIDR);
     }
 
     if (c->flags & CS_ETMC_EVENTSELECT) {
-        c->eventctlr0r = _cs_read(d, CS_ETMV4_EVENTCTL0R);
-        c->eventctlr1r = _cs_read(d, CS_ETMV4_EVENTCTL1R);
+        c->eventctlr0r = _cs_read32(d, CS_ETMV4_EVENTCTL0R);
+        c->eventctlr1r = _cs_read32(d, CS_ETMV4_EVENTCTL1R);
         if (c->scv4->idr0.bits.tssize > 0) {
-            c->tsctlr = _cs_read(d, CS_ETMV4_TSCTLR);
+            c->tsctlr = _cs_read32(d, CS_ETMV4_TSCTLR);
         }
     }
 
     if (c->flags & CS_ETMC_TRACE_ENABLE) {
-        c->victlr = _cs_read(d, CS_ETMV4_VICTLR);
-        c->viiectlr = _cs_read(d, CS_ETMV4_VIIECTLR);
-        c->vissctlr = _cs_read(d, CS_ETMV4_VISSCTLR);
-        c->vipcssctlr = _cs_read(d, CS_ETMV4_VIPSSCTLR);
+        c->victlr = _cs_read32(d, CS_ETMV4_VICTLR);
+        c->viiectlr = _cs_read32(d, CS_ETMV4_VIIECTLR);
+        c->vissctlr = _cs_read32(d, CS_ETMV4_VISSCTLR);
+        c->vipcssctlr = _cs_read32(d, CS_ETMV4_VIPSSCTLR);
 
         if (c->scv4->idr0.bits.trcdata != 0) {
-            c->vdctlr = _cs_read(d, CS_ETMV4_VDCTLR);
-            c->vdsacctlr = _cs_read(d, CS_ETMV4_VDSACCTLR);
-            c->vdarcctlr = _cs_read(d, CS_ETMV4_VDARCCTLR);
+            c->vdctlr = _cs_read32(d, CS_ETMV4_VDCTLR);
+            c->vdsacctlr = _cs_read32(d, CS_ETMV4_VDSACCTLR);
+            c->vdarcctlr = _cs_read32(d, CS_ETMV4_VDARCCTLR);
         }
     }
 
@@ -131,10 +131,10 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
         if (numregs > ETMv4_NUM_SEQ_EVT_MAX)
             numregs = ETMv4_NUM_SEQ_EVT_MAX;
         for (i = 0; i < numregs; i++) {
-            c->seqevr[i] = _cs_read(d, CS_ETMV4_SEQEVR(i));
+            c->seqevr[i] = _cs_read32(d, CS_ETMV4_SEQEVR(i));
         }
-        c->seqrstevr = _cs_read(d, CS_ETMV4_SEQRSTEVR);
-        c->seqstr = _cs_read(d, CS_ETMV4_SEQSTR);
+        c->seqrstevr = _cs_read32(d, CS_ETMV4_SEQRSTEVR);
+        c->seqstr = _cs_read32(d, CS_ETMV4_SEQSTR);
     }
 
     if ((c->flags & CS_ETMC_COUNTER) && (c->scv4->idr5.bits.numcntr > 0)) {
@@ -147,9 +147,9 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
 
         for (i = 0; i < numregs; i++) {
             if (c->counter_acc_mask & masksel) {
-                c->counter[i].cntrldvr = _cs_read(d, CS_ETMV4_CNTRLDVR(i));
-                c->counter[i].cntctlr = _cs_read(d, CS_ETMV4_CNTCTLR(i));
-                c->counter[i].cntvr = _cs_read(d, CS_ETMV4_CNTVR(i));
+                c->counter[i].cntrldvr = _cs_read32(d, CS_ETMV4_CNTRLDVR(i));
+                c->counter[i].cntctlr = _cs_read32(d, CS_ETMV4_CNTCTLR(i));
+                c->counter[i].cntvr = _cs_read32(d, CS_ETMV4_CNTVR(i));
             }
             masksel <<= 1;
         }
@@ -165,12 +165,12 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x4; /* skip regs 0 and 1 as these are fixed and not accessible. */
             for (i = 2; i < numregs; i++) {
                 if (masksel & c->rsctlr_acc_mask)
-                    c->rsctlr[i] = _cs_read(d, CS_ETMV4_RSCTLR(i));
+                    c->rsctlr[i] = _cs_read32(d, CS_ETMV4_RSCTLR(i));
                 masksel <<= 1;
             }
         }
         if (c->scv4->idr5.bits.numextinsel > 0) {
-            c->extinselr = _cs_read(d, CS_ETMV4_EXTINSELR);
+            c->extinselr = _cs_read32(d, CS_ETMV4_EXTINSELR);
         }
     }
 
@@ -184,10 +184,10 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x1;
             for (i = 0; i < numregs; i++) {
                 if (c->ss_comps_acc_mask & masksel) {
-                    c->ss_comps[i].ssccr = _cs_read(d, CS_ETMV4_SSCCR(i));
-                    c->ss_comps[i].sscsr = _cs_read(d, CS_ETMV4_SSCSR(i));
+                    c->ss_comps[i].ssccr = _cs_read32(d, CS_ETMV4_SSCCR(i));
+                    c->ss_comps[i].sscsr = _cs_read32(d, CS_ETMV4_SSCSR(i));
                     c->ss_comps[i].sspcicr =
-                            _cs_read(d, CS_ETMV4_SSPCICR(i));
+                            _cs_read32(d, CS_ETMV4_SSPCICR(i));
                 }
                 masksel <<= 1;
             }
@@ -212,14 +212,14 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             for (i = 0; i < numregs; i++) {
                 if (c->addr_comps_acc_mask & masksel) {
                     c->addr_comps[i].acvr_l =
-                            _cs_read(d, CS_ETMV4_ACVR(i));
+                            _cs_read32(d, CS_ETMV4_ACVR(i));
                     if (a_size == 64)
                         c->addr_comps[i].acvr_h =
-                                _cs_read(d, CS_ETMV4_ACVR(i) + 4);
+                                _cs_read32(d, CS_ETMV4_ACVR(i) + 4);
                     else
                         c->addr_comps[i].acvr_h = 0;
                     c->addr_comps[i].acatr_l =
-                            _cs_read(d, CS_ETMV4_ACATR(i));
+                            _cs_read32(d, CS_ETMV4_ACATR(i));
                 }
                 masksel <<= 1;
             }
@@ -237,14 +237,14 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             for (i = 0; i < numregs; i++) {
                 if (c->data_comps_acc_mask & masksel) {
                     c->data_comps[i].dvcvr_l =
-                            _cs_read(d, CS_ETMV4_DVCVR(i));
+                            _cs_read32(d, CS_ETMV4_DVCVR(i));
                     c->data_comps[i].dvcmr_l =
-                            _cs_read(d, CS_ETMV4_DVCMR(i));
+                            _cs_read32(d, CS_ETMV4_DVCMR(i));
                     if (a_size == 64) {
                         c->data_comps[i].dvcvr_h =
-                                _cs_read(d, CS_ETMV4_DVCVR(i) + 4);
+                                _cs_read32(d, CS_ETMV4_DVCVR(i) + 4);
                         c->data_comps[i].dvcmr_h =
-                                _cs_read(d, CS_ETMV4_DVCMR(i) + 4);
+                                _cs_read32(d, CS_ETMV4_DVCMR(i) + 4);
                     } else {
                         c->data_comps[i].dvcvr_h = 0;
                         c->data_comps[i].dvcmr_h = 0;
@@ -266,18 +266,18 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             for (i = 0; i < numregs; i++) {
                 if (c->cxid_comps_acc_mask & masksel) {
                     c->cxid_comps[i].cidcvr_l =
-                            _cs_read(d, CS_ETMV4_CIDCVR(i));
+                            _cs_read32(d, CS_ETMV4_CIDCVR(i));
                     if (a_size == 64) {
                         c->cxid_comps[i].cidcvr_h =
-                                _cs_read(d, CS_ETMV4_CIDCVR(i) + 4);
+                                _cs_read32(d, CS_ETMV4_CIDCVR(i) + 4);
                     } else {
                         c->cxid_comps[i].cidcvr_h = 0;
                     }
                 }
                 masksel <<= 1;
             }
-            c->cidcctlr0 = _cs_read(d, CS_ETMV4_CIDCCTLR0);
-            c->cidcctlr1 = _cs_read(d, CS_ETMV4_CIDCCTLR1);
+            c->cidcctlr0 = _cs_read32(d, CS_ETMV4_CIDCCTLR0);
+            c->cidcctlr1 = _cs_read32(d, CS_ETMV4_CIDCCTLR1);
         }
     }
 
@@ -292,10 +292,10 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             for (i = 0; i < numregs; i++) {
                 if (c->vmid_comps_acc_mask & masksel) {
                     c->vmid_comps[i].vmidcvr_l =
-                            _cs_read(d, CS_ETMV4_VMIDCVR(i));
+                            _cs_read32(d, CS_ETMV4_VMIDCVR(i));
                     if (a_size == 64) {
                         c->vmid_comps[i].vmidcvr_h =
-                                _cs_read(d, CS_ETMV4_VMIDCVR(i) + 4);
+                                _cs_read32(d, CS_ETMV4_VMIDCVR(i) + 4);
                     } else {
                         c->vmid_comps[i].vmidcvr_h = 0;
                     }
@@ -304,8 +304,8 @@ int _cs_etm_v4_config_get(struct cs_device *d, cs_etmv4_config_t *c)
             }
             /* mask regs only exist if size > 8 bit. */
             if (c->scv4->idr2.bits.vmidsize > 0x1) {
-                c->vmidcctlr0 = _cs_read(d, CS_ETMV4_VMIDCCTLR0);
-                c->vmidcctlr1 = _cs_read(d, CS_ETMV4_VMIDCCTLR1);
+                c->vmidcctlr0 = _cs_read32(d, CS_ETMV4_VMIDCCTLR0);
+                c->vmidcctlr1 = _cs_read32(d, CS_ETMV4_VMIDCCTLR1);
             }
         }
     }
@@ -326,44 +326,44 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
 
     /* general configuration */
     if (c->flags & CS_ETMC_CONFIG) {
-        _cs_write(d, CS_ETMV4_CONFIGR, c->configr.reg);
+        _cs_write32(d, CS_ETMV4_CONFIGR, c->configr.reg);
 
         /* write if implemented */
         if (c->scv4->idr3.bits.stallctl) {
-            _cs_write(d, CS_ETMV4_STALLCTLR, c->stallcrlr);
+            _cs_write32(d, CS_ETMV4_STALLCTLR, c->stallcrlr);
         }
-        _cs_write(d, CS_ETMV4_SYNCPR, c->syncpr);
+        _cs_write32(d, CS_ETMV4_SYNCPR, c->syncpr);
         if (c->scv4->idr0.bits.trccci) {
-            _cs_write(d, CS_ETMV4_CCCTLR, c->ccctlr);
+            _cs_write32(d, CS_ETMV4_CCCTLR, c->ccctlr);
         }
         if ((c->scv4->idr0.bits.trcbb == 1) && (c->scv4->idr4.bits.numacpairs > 0)) {
-            _cs_write(d, CS_ETMV4_BBCTLR, c->bbctlr);
+            _cs_write32(d, CS_ETMV4_BBCTLR, c->bbctlr);
         }
         if (c->scv4->idr0.bits.qfilt) {
-            _cs_write(d, CS_ETMV4_QCTLR, c->qctlr);
+            _cs_write32(d, CS_ETMV4_QCTLR, c->qctlr);
         }
-        _cs_write(d, CS_ETMV4_TRACEIDR,
+        _cs_write32(d, CS_ETMV4_TRACEIDR,
                   c->traceidr & BITMASK(c->scv4->idr5.bits.traceidsize));
     }
 
     if (c->flags & CS_ETMC_EVENTSELECT) {
-        _cs_write(d, CS_ETMV4_EVENTCTL0R, c->eventctlr0r);
-        _cs_write(d, CS_ETMV4_EVENTCTL1R, c->eventctlr1r);
+        _cs_write32(d, CS_ETMV4_EVENTCTL0R, c->eventctlr0r);
+        _cs_write32(d, CS_ETMV4_EVENTCTL1R, c->eventctlr1r);
         if (c->scv4->idr0.bits.tssize > 0) {
-            _cs_write(d, CS_ETMV4_TSCTLR, c->tsctlr);
+            _cs_write32(d, CS_ETMV4_TSCTLR, c->tsctlr);
         }
     }
 
     if (c->flags & CS_ETMC_TRACE_ENABLE) {
-        _cs_write(d, CS_ETMV4_VICTLR, c->victlr);
-        _cs_write(d, CS_ETMV4_VIIECTLR, c->viiectlr);
-        _cs_write(d, CS_ETMV4_VISSCTLR, c->vissctlr);
-        _cs_write(d, CS_ETMV4_VIPSSCTLR, c->vipcssctlr);
+        _cs_write32(d, CS_ETMV4_VICTLR, c->victlr);
+        _cs_write32(d, CS_ETMV4_VIIECTLR, c->viiectlr);
+        _cs_write32(d, CS_ETMV4_VISSCTLR, c->vissctlr);
+        _cs_write32(d, CS_ETMV4_VIPSSCTLR, c->vipcssctlr);
 
         if (c->scv4->idr0.bits.trcdata != 0) {
-            _cs_write(d, CS_ETMV4_VDCTLR, c->vdctlr);
-            _cs_write(d, CS_ETMV4_VDSACCTLR, c->vdsacctlr);
-            _cs_write(d, CS_ETMV4_VDARCCTLR, c->vdarcctlr);
+            _cs_write32(d, CS_ETMV4_VDCTLR, c->vdctlr);
+            _cs_write32(d, CS_ETMV4_VDSACCTLR, c->vdsacctlr);
+            _cs_write32(d, CS_ETMV4_VDARCCTLR, c->vdarcctlr);
         }
     }
 
@@ -374,10 +374,10 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             numregs = ETMv4_NUM_SEQ_EVT_MAX;
 
         for (i = 0; i < numregs; i++) {
-            _cs_write(d, CS_ETMV4_SEQEVR(i), c->seqevr[i]);
+            _cs_write32(d, CS_ETMV4_SEQEVR(i), c->seqevr[i]);
         }
-        _cs_write(d, CS_ETMV4_SEQRSTEVR, c->seqrstevr);
-        _cs_write(d, CS_ETMV4_SEQSTR, c->seqstr);
+        _cs_write32(d, CS_ETMV4_SEQRSTEVR, c->seqrstevr);
+        _cs_write32(d, CS_ETMV4_SEQSTR, c->seqstr);
     }
 
     if ((c->flags & CS_ETMC_COUNTER) && (c->scv4->idr5.bits.numcntr > 0)) {
@@ -390,9 +390,9 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
 
         for (i = 0; i < numregs; i++) {
             if (c->counter_acc_mask & masksel) {
-                _cs_write(d, CS_ETMV4_CNTRLDVR(i), c->counter[i].cntrldvr);
-                _cs_write(d, CS_ETMV4_CNTCTLR(i), c->counter[i].cntctlr);
-                _cs_write(d, CS_ETMV4_CNTVR(i), c->counter[i].cntvr);
+                _cs_write32(d, CS_ETMV4_CNTRLDVR(i), c->counter[i].cntrldvr);
+                _cs_write32(d, CS_ETMV4_CNTCTLR(i), c->counter[i].cntctlr);
+                _cs_write32(d, CS_ETMV4_CNTVR(i), c->counter[i].cntvr);
             }
             masksel <<= 1;
         }
@@ -408,12 +408,12 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x4; /* skip regs 0 and 1 as these are fixed and not accessible. */
             for (i = 2; i < numregs; i++) {
                 if (masksel & c->rsctlr_acc_mask)
-                    _cs_write(d, CS_ETMV4_RSCTLR(i), c->rsctlr[i]);
+                    _cs_write32(d, CS_ETMV4_RSCTLR(i), c->rsctlr[i]);
                 masksel <<= 1;
             }
         }
         if (c->scv4->idr5.bits.numextinsel > 0) {
-            _cs_write(d, CS_ETMV4_EXTINSELR, c->extinselr);
+            _cs_write32(d, CS_ETMV4_EXTINSELR, c->extinselr);
         }
     }
 
@@ -428,9 +428,9 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x1;
             for (i = 0; i < numregs; i++) {
                 if (c->ss_comps_acc_mask & masksel) {
-                    _cs_write(d, CS_ETMV4_SSCCR(i), c->ss_comps[i].ssccr);
-                    _cs_write(d, CS_ETMV4_SSCSR(i), c->ss_comps[i].sscsr);
-                    _cs_write(d, CS_ETMV4_SSPCICR(i),
+                    _cs_write32(d, CS_ETMV4_SSCCR(i), c->ss_comps[i].ssccr);
+                    _cs_write32(d, CS_ETMV4_SSCSR(i), c->ss_comps[i].sscsr);
+                    _cs_write32(d, CS_ETMV4_SSPCICR(i),
                               c->ss_comps[i].sspcicr);
                 }
                 masksel <<= 1;
@@ -449,11 +449,11 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x1;
             for (i = 0; i < numregs; i++) {
                 if (c->addr_comps_acc_mask & masksel) {
-                    _cs_write(d, CS_ETMV4_ACVR(i),
+                    _cs_write32(d, CS_ETMV4_ACVR(i),
                               c->addr_comps[i].acvr_l);
-                    _cs_write(d, CS_ETMV4_ACVR(i) + 4,
+                    _cs_write32(d, CS_ETMV4_ACVR(i) + 4,
                               c->addr_comps[i].acvr_h /*& a_mask */);
-                    _cs_write(d, CS_ETMV4_ACATR(i),
+                    _cs_write32(d, CS_ETMV4_ACATR(i),
                               c->addr_comps[i].acatr_l);
                 }
                 masksel <<= 1;
@@ -472,14 +472,14 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             for (i = 0; i < numregs; i++) {
                 if (c->data_comps_acc_mask & masksel) {
                     /* write and force masked bits to 0 in value (TRM 7.3.25) */
-                    _cs_write(d, CS_ETMV4_DVCVR(i),
+                    _cs_write32(d, CS_ETMV4_DVCVR(i),
                               c->data_comps[i].dvcvr_l & ~c->data_comps[i].dvcmr_l);
-                    _cs_write(d, CS_ETMV4_DVCMR(i),
+                    _cs_write32(d, CS_ETMV4_DVCMR(i),
                               c->data_comps[i].dvcmr_l);
                     if (a_size == 64) {
-                        _cs_write(d, CS_ETMV4_DVCVR(i) + 4,
+                        _cs_write32(d, CS_ETMV4_DVCVR(i) + 4,
                                   c->data_comps[i].dvcvr_h & ~c->data_comps[i].dvcmr_h);
-                        _cs_write(d, CS_ETMV4_DVCMR(i) + 4,
+                        _cs_write32(d, CS_ETMV4_DVCMR(i) + 4,
                                   c->data_comps[i].dvcmr_h);
                     }
                 }
@@ -498,17 +498,17 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x1;
             for (i = 0; i < numregs; i++) {
                 if (c->cxid_comps_acc_mask & masksel) {
-                    _cs_write(d, CS_ETMV4_CIDCVR(i),
+                    _cs_write32(d, CS_ETMV4_CIDCVR(i),
                               c->cxid_comps[i].cidcvr_l);
                     if (a_size == 64) {
-                        _cs_write(d, CS_ETMV4_CIDCVR(i) + 4,
+                        _cs_write32(d, CS_ETMV4_CIDCVR(i) + 4,
                                   c->cxid_comps[i].cidcvr_h);
                     }
                 }
                 masksel <<= 1;
             }
-            _cs_write(d, CS_ETMV4_CIDCCTLR0, c->cidcctlr0);
-            _cs_write(d, CS_ETMV4_CIDCCTLR1, c->cidcctlr1);
+            _cs_write32(d, CS_ETMV4_CIDCCTLR0, c->cidcctlr0);
+            _cs_write32(d, CS_ETMV4_CIDCCTLR1, c->cidcctlr1);
         }
     }
 
@@ -522,18 +522,18 @@ int _cs_etm_v4_config_put(struct cs_device *d, cs_etmv4_config_t *c)
             masksel = 0x1;
             for (i = 0; i < numregs; i++) {
                 if (c->vmid_comps_acc_mask & masksel) {
-                    _cs_write(d, CS_ETMV4_VMIDCVR(i),
+                    _cs_write32(d, CS_ETMV4_VMIDCVR(i),
                               c->vmid_comps[i].vmidcvr_l);
                     if (a_size == 64) {
-                        _cs_write(d, CS_ETMV4_VMIDCVR(i) + 4,
+                        _cs_write32(d, CS_ETMV4_VMIDCVR(i) + 4,
                                   c->vmid_comps[i].vmidcvr_h);
                     }
                 }
                 masksel <<= 1;
             }
             if (c->scv4->idr2.bits.vmidsize > 0x1) {
-                _cs_write(d, CS_ETMV4_VMIDCCTLR0, c->vmidcctlr0);
-                _cs_write(d, CS_ETMV4_VMIDCCTLR1, c->vmidcctlr1);
+                _cs_write32(d, CS_ETMV4_VMIDCCTLR0, c->vmidcctlr0);
+                _cs_write32(d, CS_ETMV4_VMIDCCTLR1, c->vmidcctlr1);
             }
         }
     }
@@ -576,25 +576,25 @@ int _cs_etm_v4_enable_programming(struct cs_device *d)
 
     _cs_unlock(d); /* lsr unlock */
 
-    regval = _cs_read(d, CS_ETMv4_PDSR);
+    regval = _cs_read32(d, CS_ETMv4_PDSR);
     if ((regval & CS_ETMv4_PDSR_PowerUp) == 0) {
-        rc = _cs_write(d, CS_ETMv4_PDCR, 0x8); /* power it up */
+        rc = _cs_write32(d, CS_ETMv4_PDCR, 0x8); /* power it up */
         if (rc == 0)
-            rc = _cs_wait(d, CS_ETMv4_PDSR, CS_ETMv4_PDSR_PowerUp);
+            rc = _cs_wait32(d, CS_ETMv4_PDSR, CS_ETMv4_PDSR_PowerUp);
     }
 
     if (rc == 0) {
-        regval = _cs_read(d, CS_ETMv4_OSLSR);
+        regval = _cs_read32(d, CS_ETMv4_OSLSR);
         if (regval & 0x2) /* OS locked */
-            rc = _cs_write(d, CS_ETMv4_OSLAR, 0);
+            rc = _cs_write32(d, CS_ETMv4_OSLAR, 0);
     }
 
     if (rc == 0) {
         _cs_claim(d);
-        rc = _cs_write(d, CS_ETMV4_PRGCTLR, 0); /* disable trace */
+        rc = _cs_write32(d, CS_ETMV4_PRGCTLR, 0); /* disable trace */
     }
     if (rc == 0)
-        rc = _cs_wait(d, CS_ETMV4_STATR, CS_ETMV4_STATR_idle); /* wait for idle bit */
+        rc = _cs_wait32(d, CS_ETMV4_STATR, CS_ETMV4_STATR_idle); /* wait for idle bit */
     return rc;
 }
 
@@ -602,7 +602,7 @@ int _cs_etm_v4_disable_programming(struct cs_device *d)
 {
     int rc = 0;
     _cs_unlock(d);
-    rc = _cs_write(d, CS_ETMV4_PRGCTLR, CS_ETMV4_PRGCTLR_en); /* enable trace */
+    rc = _cs_write32(d, CS_ETMV4_PRGCTLR, CS_ETMV4_PRGCTLR_en); /* enable trace */
     return rc;
 }
 

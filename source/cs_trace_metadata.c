@@ -98,16 +98,16 @@ static int cs_get_etm_metadata(cs_device_t dev, struct etm_metadata *m)
     assert(cs_device_has_class(dev, CS_DEVCLASS_SOURCE));
     assert(cs_device_get_type(dev) == DEV_ETM);
 
-    m->etmidr = cs_device_read(dev, CS_ETMIDR);
+    m->etmidr = cs_device_read32(dev, CS_ETMIDR);
     m->etm_version = ((m->etmidr >> 4) & 0xFF) + 0x10;
 
     if (m->etm_version < 0x50) {
-        etmcr = cs_device_read(dev, CS_ETMCR);
-        etmccer = cs_device_read(dev, CS_ETMCCER);
+        etmcr = cs_device_read32(dev, CS_ETMCR);
+        etmccer = cs_device_read32(dev, CS_ETMCCER);
         m->etmcr = etmcr;
         m->etmccer = etmccer;
 
-        m->etmtraceidr = cs_device_read(dev, CS_ETMTRACEIDR);
+        m->etmtraceidr = cs_device_read32(dev, CS_ETMTRACEIDR);
 
         m->cycle_accurate = ((etmcr & CS_ETMCR_CycleAccurate) != 0);
         m->return_stack_enabled = ((etmcr & 0x20000000) != 0);
@@ -124,9 +124,9 @@ static int cs_get_etm_metadata(cs_device_t dev, struct etm_metadata *m)
         m->cid_bits = ((1U << ((etmcr & 0xC000) >> 14)) >> 1) << 3;
         m->vmid_bits = 8; /* TBD */
     } else {
-        m->etmcr = cs_device_read(dev, CS_ETMV4_CONFIGR);
-        m->etmtraceidr = cs_device_read(dev, CS_ETMV4_TRACEIDR);
-        m->etmv4authstatus = cs_device_read(dev, CS_ETMv4_AUTHSTATUS);
+        m->etmcr = cs_device_read32(dev, CS_ETMV4_CONFIGR);
+        m->etmtraceidr = cs_device_read32(dev, CS_ETMV4_TRACEIDR);
+        m->etmv4authstatus = cs_device_read32(dev, CS_ETMv4_AUTHSTATUS);
 
         /* ETMv4 config */
         cs_etm_config_init_ex(dev, &t4config); /* init will link to the static config already read up */
@@ -293,7 +293,7 @@ int cs_get_trace_metadata(int mtype, cs_device_t dev, int trace_id,
             add_to_buf(&b, "type=ITM\n\n");
             add_to_buf(&b, "[regs]\n");
             add_to_buf(&b, "ITM_CTRL(0x%03X)=0x%08X\n", CS_ITM_CTRL >> 2,
-                       cs_device_read(dev, CS_ITM_CTRL));
+                       cs_device_read32(dev, CS_ITM_CTRL));
             if (name_buf) {
                 snprintf(name_buf, name_buf_size, "ITM_%u", trace_id);
             }
@@ -304,7 +304,7 @@ int cs_get_trace_metadata(int mtype, cs_device_t dev, int trace_id,
             add_to_buf(&b, "type=STM\n\n");
             add_to_buf(&b, "[regs]\n");
             add_to_buf(&b, "STMTCSR(0x%03X)=0x%08X\n", CS_STM_TCSR >> 2,
-                       cs_device_read(dev, CS_STM_TCSR));
+                       cs_device_read32(dev, CS_STM_TCSR));
             if (name_buf) {
                 snprintf(name_buf, name_buf_size, "STM_%u", trace_id);
             }

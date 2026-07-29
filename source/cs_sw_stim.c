@@ -34,10 +34,10 @@ unsigned int cs_stm_get_ext_ports_size(struct cs_device *d)
 int _cs_swstim_trace_enable(struct cs_device *d)
 {
     if (d->type == DEV_ITM) {
-        _cs_set(d, CS_ITM_CTRL, CS_ITM_CTRL_ITMEn);
+        _cs_set32(d, CS_ITM_CTRL, CS_ITM_CTRL_ITMEn);
         return 0;
     } else if (d->type == DEV_STM) {
-        _cs_set(d, CS_STM_TCSR, CS_STM_TCSR_EN);
+        _cs_set32(d, CS_STM_TCSR, CS_STM_TCSR_EN);
         return 0;
     } else
         return cs_report_device_error(d, "not swstim device");
@@ -46,8 +46,8 @@ int _cs_swstim_trace_enable(struct cs_device *d)
 int _cs_swstim_trace_disable(struct cs_device *d)
 {
     if (d->type == DEV_ITM) {
-        _cs_clear(d, CS_ITM_CTRL, CS_ITM_CTRL_ITMEn);
-        _cs_waitnot(d, CS_ITM_CTRL, CS_ITM_CTRL_ITMBusy);
+        _cs_clear32(d, CS_ITM_CTRL, CS_ITM_CTRL_ITMEn);
+        _cs_waitnot32(d, CS_ITM_CTRL, CS_ITM_CTRL_ITMBusy);
     } else if (d->type == DEV_STM) {
         /* "To ensure that all writes to the STM stimulus ports are traced before
            disabling the STM, ARM recommends that software writes to the stimulus
@@ -60,8 +60,8 @@ int _cs_swstim_trace_disable(struct cs_device *d)
                 (void)+*(uint32_t volatile *)master0;
             }
         }
-        _cs_clear(d, CS_STM_TCSR, CS_STM_TCSR_EN);
-        _cs_waitnot(d, CS_STM_TCSR, CS_STM_TCSR_BUSY);
+        _cs_clear32(d, CS_STM_TCSR, CS_STM_TCSR_EN);
+        _cs_waitnot32(d, CS_STM_TCSR, CS_STM_TCSR_BUSY);
     } else {
         return cs_report_device_error(d, "not swstim device");
     }
@@ -71,10 +71,10 @@ int _cs_swstim_trace_disable(struct cs_device *d)
 int _cs_swstim_set_trace_id(struct cs_device *d, cs_atid_t id)
 {
     if (d->type == DEV_ITM) {
-        _cs_set_mask(d, CS_ITM_CTRL, 0x007F0000,
+        _cs_set32_mask(d, CS_ITM_CTRL, 0x007F0000,
                      ((unsigned int)id << 16));
     } else if (d->type == DEV_STM) {
-        _cs_set_mask(d, CS_STM_TCSR, 0x007F0000,
+        _cs_set32_mask(d, CS_STM_TCSR, 0x007F0000,
                      ((unsigned int)id << 16));
     } else {
         return cs_report_device_error(d, "not swstim device");
@@ -84,13 +84,13 @@ int _cs_swstim_set_trace_id(struct cs_device *d, cs_atid_t id)
 
 int _cs_stm_config_static_init(struct cs_device *d)
 {
-    d->v.stm.s_config.spfeat1.reg = _cs_read(d, CS_STM_FEAT1R);
-    d->v.stm.s_config.spfeat2.reg = _cs_read(d, CS_STM_FEAT2R);
-    d->v.stm.s_config.spfeat3.reg = _cs_read(d, CS_STM_FEAT3R);
+    d->v.stm.s_config.spfeat1.reg = _cs_read32(d, CS_STM_FEAT1R);
+    d->v.stm.s_config.spfeat2.reg = _cs_read32(d, CS_STM_FEAT2R);
+    d->v.stm.s_config.spfeat3.reg = _cs_read32(d, CS_STM_FEAT3R);
 #if 0
     fprintf(stderr, "FEAT1R=0x%08x FEAT2R=0x%08x FEAT3R=0x%08x\n",
-            _cs_read(d, CS_STM_FEAT1R),
-            _cs_read(d, CS_STM_FEAT2R), _cs_read(d, CS_STM_FEAT3R));
+            _cs_read32(d, CS_STM_FEAT1R),
+            _cs_read32(d, CS_STM_FEAT2R), _cs_read32(d, CS_STM_FEAT3R));
 #endif
     return 0;
 }
@@ -125,7 +125,7 @@ int cs_trace_stimulus(cs_device_t dev, unsigned int port, uint32_t value)
     if (d->type == DEV_ITM) {
         /* "The lock access mechanism is not present for any access to stimulus
            registers" */
-        return _cs_write_wo(d, CS_ITM_STIMPORT(port), value);
+        return _cs_write32_wo(d, CS_ITM_STIMPORT(port), value);
     } else if (d->type == DEV_STM) {
         if (d->v.stm.ext_ports) {
             unsigned char *master =
@@ -138,7 +138,7 @@ int cs_trace_stimulus(cs_device_t dev, unsigned int port, uint32_t value)
                     value;
             return 0;
         } else if (d->v.stm.basic_ports) {
-            return _cs_write_wo(d, CS_STM_STIMR(port), value);
+            return _cs_write32_wo(d, CS_STM_STIMR(port), value);
         } else {
             return cs_report_device_error(d,
                                           "No STM stimulus ports available!");
@@ -156,10 +156,10 @@ int cs_trace_swstim_enable_trigger(cs_device_t dev, uint32_t mask, uint32_t valu
 
     _cs_unlock(d);
     if (d->type == DEV_ITM) {
-        ret = _cs_set_mask(d, CS_ITM_TRTRIG, mask, value);
+        ret = _cs_set32_mask(d, CS_ITM_TRTRIG, mask, value);
     } else if (d->type == DEV_STM) {
         /* STM has similar functionality using SPTER */
-        ret = _cs_set_mask(d, CS_STM_SPTER, mask, value);
+        ret = _cs_set32_mask(d, CS_STM_SPTER, mask, value);
     } else {
         ret =
                 cs_report_device_error(d,
@@ -174,16 +174,16 @@ int cs_trace_swstim_enable_all_ports(cs_device_t dev)
     _cs_unlock(d);
     if (d->type == DEV_ITM) {
         /* Enable all stimulus ports */
-        _cs_write(d, CS_ITM_TRCEN, 0xFFFFFFFF);
+        _cs_write32(d, CS_ITM_TRCEN, 0xFFFFFFFF);
     } else if (d->type == DEV_STM) {
         /* clear master select - all masters enabled */
         if (d->v.stm.n_masters > 1)
-            _cs_clear(d, CS_STM_SPMSCR, CS_STM_SPMSCR_MASTCTL);
+            _cs_clear32(d, CS_STM_SPMSCR, CS_STM_SPMSCR_MASTCTL);
         /* clear port select - not used so SPER applies to all groups */
         if (d->v.stm.n_ports > 32)
-            _cs_clear(d, CS_STM_SPSCR, CS_STM_SPSCR_PORTCTL);
+            _cs_clear32(d, CS_STM_SPSCR, CS_STM_SPSCR_PORTCTL);
         /* enable all ports in the group. */
-        _cs_write(d, CS_STM_SPER, 0xFFFFFFFF);
+        _cs_write32(d, CS_STM_SPER, 0xFFFFFFFF);
     } else
         return cs_report_device_error(d,
                                       "not swstim - can't enable ports for this device");
@@ -195,9 +195,9 @@ int cs_trace_swstim_set_sync_repeat(cs_device_t dev, unsigned int value)
     struct cs_device *d = DEV(dev);
     _cs_unlock(d);
     if (d->type == DEV_ITM) {
-        _cs_write(d, CS_ITM_SYNCCTRL, value);
+        _cs_write32(d, CS_ITM_SYNCCTRL, value);
     } else if (d->type == DEV_STM) {
-        _cs_write(d, CS_STM_SYNCR, (value & 0xFFF));
+        _cs_write32(d, CS_STM_SYNCR, (value & 0xFFF));
     } else
         return cs_report_device_error(d,
                                       "not swstim - can't set sync repeat for this device");
@@ -354,26 +354,26 @@ int cs_stm_config_get(cs_device_t dev, stm_config_t *dyn_config)
     _cs_unlock(d);
 
     if (dyn_config->config_op_flags & CS_STMC_CTRL)
-        dyn_config->tcsr.reg = _cs_read(d, CS_STM_TCSR);
+        dyn_config->tcsr.reg = _cs_read32(d, CS_STM_TCSR);
 
     if (dyn_config->config_op_flags & CS_STMC_SYNC)
-        dyn_config->syncr = _cs_read(d, CS_STM_SYNCR);
+        dyn_config->syncr = _cs_read32(d, CS_STM_SYNCR);
 
     if (dyn_config->config_op_flags & CS_STMC_PENA) {
-        dyn_config->sper = _cs_read(d, CS_STM_SPER);
-        dyn_config->spter = _cs_read(d, CS_STM_SPTER);
-        dyn_config->spscr = _cs_read(d, CS_STM_SPSCR);
-        dyn_config->spmscr = _cs_read(d, CS_STM_SPMSCR);
-        dyn_config->privmaskr = _cs_read(d, CS_STM_PRIVMASKR);
+        dyn_config->sper = _cs_read32(d, CS_STM_SPER);
+        dyn_config->spter = _cs_read32(d, CS_STM_SPTER);
+        dyn_config->spscr = _cs_read32(d, CS_STM_SPSCR);
+        dyn_config->spmscr = _cs_read32(d, CS_STM_SPMSCR);
+        dyn_config->privmaskr = _cs_read32(d, CS_STM_PRIVMASKR);
     }
 
     if (dyn_config->config_op_flags & CS_STMC_OVER) {
-        dyn_config->spoverrider = _cs_read(d, CS_STM_SPOVERRIDER);
-        dyn_config->spmoverrider = _cs_read(d, CS_STM_SPMOVERRIDER);
+        dyn_config->spoverrider = _cs_read32(d, CS_STM_SPOVERRIDER);
+        dyn_config->spmoverrider = _cs_read32(d, CS_STM_SPMOVERRIDER);
     }
 
     if (dyn_config->config_op_flags & CS_STMC_TRIG) {
-        dyn_config->sptrigcsr = _cs_read(d, CS_STM_SPTRIGCSR);
+        dyn_config->sptrigcsr = _cs_read32(d, CS_STM_SPTRIGCSR);
     }
 
     return 0;
@@ -388,26 +388,26 @@ int cs_stm_config_put(cs_device_t dev, stm_config_t *dyn_config)
     _cs_unlock(d);
 
     if (dyn_config->config_op_flags & CS_STMC_CTRL)
-        _cs_write(d, CS_STM_TCSR, dyn_config->tcsr.reg);
+        _cs_write32(d, CS_STM_TCSR, dyn_config->tcsr.reg);
 
     if (dyn_config->config_op_flags & CS_STMC_SYNC)
-        _cs_write(d, CS_STM_SYNCR, dyn_config->syncr);
+        _cs_write32(d, CS_STM_SYNCR, dyn_config->syncr);
 
     if (dyn_config->config_op_flags & CS_STMC_PENA) {
-        _cs_write(d, CS_STM_SPER, dyn_config->sper);
-        _cs_write(d, CS_STM_SPTER, dyn_config->spter);
-        _cs_write(d, CS_STM_SPSCR, dyn_config->spscr);
-        _cs_write(d, CS_STM_SPMSCR, dyn_config->spmscr);
-        _cs_write(d, CS_STM_PRIVMASKR, dyn_config->privmaskr);
+        _cs_write32(d, CS_STM_SPER, dyn_config->sper);
+        _cs_write32(d, CS_STM_SPTER, dyn_config->spter);
+        _cs_write32(d, CS_STM_SPSCR, dyn_config->spscr);
+        _cs_write32(d, CS_STM_SPMSCR, dyn_config->spmscr);
+        _cs_write32(d, CS_STM_PRIVMASKR, dyn_config->privmaskr);
     }
 
     if (dyn_config->config_op_flags & CS_STMC_OVER) {
-        _cs_write(d, CS_STM_SPOVERRIDER, dyn_config->spoverrider);
-        _cs_write(d, CS_STM_SPMOVERRIDER, dyn_config->spmoverrider);
+        _cs_write32(d, CS_STM_SPOVERRIDER, dyn_config->spoverrider);
+        _cs_write32(d, CS_STM_SPMOVERRIDER, dyn_config->spmoverrider);
     }
 
     if (dyn_config->config_op_flags & CS_STMC_TRIG) {
-        _cs_write(d, CS_STM_SPTRIGCSR, dyn_config->sptrigcsr);
+        _cs_write32(d, CS_STM_SPTRIGCSR, dyn_config->sptrigcsr);
     }
     return 0;
 }

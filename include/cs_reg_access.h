@@ -50,12 +50,18 @@ cs_physaddr_t cs_device_address(cs_device_t dev);
  */
 unsigned short cs_device_part_number(cs_device_t dev);
 
-/** Read a value from a device register 
+/** Read a 32-bit value from a device register
   *   \param dev     device descriptor
   *   \param offset  register address offset, in bytes
   *   \return        Value in the register.
 */
+uint32_t cs_device_read32(cs_device_t dev, unsigned int offset);
+
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_read32(). */
+CSAL_DEPRECATED("use cs_device_read32() instead")
 uint32_t cs_device_read(cs_device_t dev, unsigned int offset);
+#endif
 
 /** Read a 64-bit value from a pair of device registers
   *   \param dev     device descriptor
@@ -72,7 +78,7 @@ uint64_t cs_device_read32x2(cs_device_t dev, unsigned int hioff, unsigned int lo
 */
 uint64_t cs_device_read64(cs_device_t dev, unsigned int off);
 
-/** Write a value to a device register.
+/** Write a 32-bit value to a device register.
   *
   * This should be used for normal configuration registers that are expected to
   * read back the value written.
@@ -81,7 +87,13 @@ uint64_t cs_device_read64(cs_device_t dev, unsigned int off);
   *   \param offset  register address offset, in bytes
   *   \param data    value to write to the register.
   */
+int cs_device_write32(cs_device_t dev, unsigned int offset, uint32_t data);
+
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_write32(). */
+CSAL_DEPRECATED("use cs_device_write32() instead")
 int cs_device_write(cs_device_t dev, unsigned int offset, uint32_t data);
+#endif
 
 /** Write a value to a 64-bit device register.
   *
@@ -91,7 +103,7 @@ int cs_device_write(cs_device_t dev, unsigned int offset, uint32_t data);
   */
 int cs_device_write64(cs_device_t dev, unsigned int offset, uint64_t data);
 
-/** Write a value to a device register.
+/** Write a 32-bit value to a device register.
   *
   * This should be used for write-only registers that do not read back the value written.
   *
@@ -99,9 +111,16 @@ int cs_device_write64(cs_device_t dev, unsigned int offset, uint64_t data);
   *   \param offset  register address offset, in bytes
   *   \param data    value to write to the register.
   */
-int cs_device_write_only(cs_device_t dev, unsigned int offset, uint32_t data);
+int cs_device_write32_only(cs_device_t dev, unsigned int offset,
+                           uint32_t data);
 
-/** Write a value to a device register using a bitmask. 
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_write32_only(). */
+CSAL_DEPRECATED("use cs_device_write32_only() instead")
+int cs_device_write_only(cs_device_t dev, unsigned int offset, uint32_t data);
+#endif
+
+/** Write a 32-bit value to a device register using a bitmask.
   *
   * Uses a read-modify-write operation. The value written is masked 
   * with the bitmask - only the bits set in the mask are changed in the written
@@ -112,29 +131,48 @@ int cs_device_write_only(cs_device_t dev, unsigned int offset, uint32_t data);
   *   \param data    value to write to the register.
   *   \param bitmask bits to write - a '1' bit in the mask will write the bit from the data value.
   */
+int cs_device_write32_masked(cs_device_t dev, unsigned int offset,
+                             uint32_t data, uint32_t bitmask);
+
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_write32_masked(). */
+CSAL_DEPRECATED("use cs_device_write32_masked() instead")
 int cs_device_write_masked(cs_device_t dev, unsigned int offset,
                            uint32_t data, uint32_t bitmask);
+#endif
 
 /**
- *   Set bit(s) in a device register, using a read-modify-write operation.
+ *   Set bit(s) in a 32-bit device register, using a read-modify-write operation.
  *
  *   \param dev     device descriptor
  *   \param offset  register offset, in bytes
  *   \param bits    bits to set - a '1' bit in the mask will set the bit.
  */
+int cs_device_set32(cs_device_t dev, unsigned int offset, uint32_t bits);
+
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_set32(). */
+CSAL_DEPRECATED("use cs_device_set32() instead")
 int cs_device_set(cs_device_t dev, unsigned int offset, uint32_t bits);
+#endif
 
 /**
- *   Clear bit(s) in a device register, using a read-modify-write operation.
+ *   Clear bit(s) in a 32-bit device register, using a read-modify-write operation.
  *
  *   \param dev     device descriptor
  *   \param offset  register offset, in bytes
  *   \param bits    bits to clear - a '1' bit in the mask will clear the bit.
  */
+int cs_device_clear32(cs_device_t dev, unsigned int offset, uint32_t bits);
+
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_clear32(). */
+CSAL_DEPRECATED("use cs_device_clear32() instead")
 int cs_device_clear(cs_device_t dev, unsigned int offset, uint32_t bits);
+#endif
 
 /**
- *   Wait for bit(s) in a device register, to achieve a given state.
+ *   Wait for bit(s) in a 32-bit device register, to achieve a given state.
  *   Wait function defined by the enum values in #cs_reg_waitbits_op_t.
  *   Value of register on match (or last failed match value) can be returned if 
  *   <tt> \b p_last_val </tt> pointer is set to a valid location to store the value.
@@ -147,9 +185,17 @@ int cs_device_clear(cs_device_t dev, unsigned int offset, uint32_t bits);
  *   \param p_last_val pointer to storage for the last read value of the register.
  * 
  */
+int cs_device_wait32(cs_device_t dev, unsigned int offset,
+                     uint32_t bit_mask, cs_reg_waitbits_op_t operation,
+                     uint32_t pattern, uint32_t *p_last_val);
+
+#if CSAL_LEGACY32
+/** Legacy alias for cs_device_wait32(). */
+CSAL_DEPRECATED("use cs_device_wait32() instead")
 int cs_device_wait(cs_device_t dev, unsigned int offset,
                    uint32_t bit_mask, cs_reg_waitbits_op_t operation,
                    uint32_t pattern, uint32_t *p_last_val);
+#endif
 
 
 /**
@@ -175,7 +221,7 @@ void cs_device_instruction_barrier(cs_device_t dev);
  *   Number of repeat register checks the library will do when waiting on bits to
  *   change in a register. 
  * 
- *   This applies to both the explicit cs_device_wait calls, and implicit library 
+ *   This applies to both explicit cs_device_wait32() calls and implicit library
  *   functionality such as ETM programming that requires waiting on bits.
  *
  *   Library default is 32.

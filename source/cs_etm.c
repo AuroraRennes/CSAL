@@ -35,13 +35,13 @@ int _cs_etm_static_config_init(struct cs_device *d)
     } else {
         /* ETMv3 or PTM */
         /* Read from ETMCCR */
-        d->v.etm.sc.ccr.reg = _cs_read(d, CS_ETMCCR);
+        d->v.etm.sc.ccr.reg = _cs_read32(d, CS_ETMCCR);
         /* Read from ETMSCR */
-        d->v.etm.sc.scr.raw.reg = _cs_read(d, CS_ETMSCR);
+        d->v.etm.sc.scr.raw.reg = _cs_read32(d, CS_ETMSCR);
         d->v.etm.sc.scr.max_port_size =
                 (d->v.etm.sc.scr.raw.sc3x.max_port_size_3 << 3) | (d->v.etm.sc.scr.raw.sc3x.max_port_size_20);
         /* Read from ETMCCER */
-        d->v.etm.sc.ccer.reg = _cs_read(d, CS_ETMCCER);
+        d->v.etm.sc.ccer.reg = _cs_read32(d, CS_ETMCCER);
     }
     return 0;
 }
@@ -72,21 +72,21 @@ int _cs_etm_enable_programming(struct cs_device *d)
     /* Manage the ETM OS lock.  "[ETM] In ETMv3.5, when the OS Lock
        is implemented, the OS Lock is always set from an ETM reset" */
     {
-        unsigned int oslsr = _cs_read(d, CS_ETMOSLSR);
+        unsigned int oslsr = _cs_read32(d, CS_ETMOSLSR);
         unsigned int pdsr;
-        /* unsigned int lsr = _cs_read(d, CS_ETMLSR); */
+        /* unsigned int lsr = _cs_read32(d, CS_ETMLSR); */
         /* LSR: bit 1: ETM locked, writes ignored;
            bit 0: access is from an i/f that requires ETM to be unlocked */
 
-        if (_cs_isset(d, CS_ETMCR, CS_ETMCR_PowerDown)) {
+        if (_cs_isset32(d, CS_ETMCR, CS_ETMCR_PowerDown)) {
             /* ETM power down. "When this bit is set to 1, writes to some registers
                and fields might be ignored." */
             /* Unset power-down state */
-            _cs_clear(d, CS_ETMCR, CS_ETMCR_PowerDown);
-            _cs_waitnot(d, CS_ETMCR, CS_ETMCR_PowerDown);
+            _cs_clear32(d, CS_ETMCR, CS_ETMCR_PowerDown);
+            _cs_waitnot32(d, CS_ETMCR, CS_ETMCR_PowerDown);
         }
 
-        pdsr = _cs_read(d, CS_ETMPDSR);
+        pdsr = _cs_read32(d, CS_ETMPDSR);
         if (pdsr & 0x02) {
             /* "In ETMv3.5, the value of this bit has no effect on accesses to the
                ETM Trace Registers." */
@@ -111,10 +111,10 @@ int _cs_etm_enable_programming(struct cs_device *d)
             /* "You set the OS lock by writing the lock key of 0xC5ACCE55 to the ETMOSLAR.
                When the OS Lock is set all PTM functions are disabled." */
             /* "Write any other value to unlock" */
-            _cs_write_wo(d, CS_ETMOSLAR, 0x00000000);
-            /* _cs_write_wo(d, CS_ETMOSLAR, 0xC5ACCE55); */
+            _cs_write32_wo(d, CS_ETMOSLAR, 0x00000000);
+            /* _cs_write32_wo(d, CS_ETMOSLAR, 0xC5ACCE55); */
             /* Now see if the registers are unlocked */
-            rc = _cs_waitnot(d, CS_ETMOSLSR, 0x02);
+            rc = _cs_waitnot32(d, CS_ETMOSLSR, 0x02);
             if (rc != 0) {
                 return cs_report_device_error(d,
                                               "could not unlock ETM trace registers");
@@ -131,9 +131,9 @@ int _cs_etm_enable_programming(struct cs_device *d)
        bits of the ETM Control Register.  You must only change the value
        of bits other than the Programming bit of the Control Register
        when bit [1] of the Status Register is set to 1." */
-    _cs_set(d, CS_ETMCR, CS_ETMCR_ProgBit);
+    _cs_set32(d, CS_ETMCR, CS_ETMCR_ProgBit);
     /* Wait according to the flowchart in [ETM] Figure 3-3 */
-    return _cs_wait(d, CS_ETMSTATUS, CS_ETMSR_ProgBit);
+    return _cs_wait32(d, CS_ETMSTATUS, CS_ETMSR_ProgBit);
 }
 
 int _cs_etm_disable_programming(struct cs_device *d)
@@ -143,9 +143,9 @@ int _cs_etm_disable_programming(struct cs_device *d)
         return _cs_etm_v4_disable_programming(d);
     }
     /* must be PTM / ETMv3 */
-    _cs_clear(d, CS_ETMCR, CS_ETMCR_ProgBit);
+    _cs_clear32(d, CS_ETMCR, CS_ETMCR_ProgBit);
     /* Wait according to the flowchart in [ETM] Figure 3-3 */
-    return _cs_waitnot(d, CS_ETMSTATUS, CS_ETMSR_ProgBit);
+    return _cs_waitnot32(d, CS_ETMSTATUS, CS_ETMSR_ProgBit);
 }
 
 #ifndef UNIX_KERNEL
@@ -369,7 +369,7 @@ int cs_etm_config_get(cs_device_t dev, struct cs_etm_config *c)
     c->idr = &(d->v.etm.etmidr);
 
     if (c->flags & CS_ETMC_CONFIG) {
-        c->cr.raw.reg = _cs_read(d, CS_ETMCR);
+        c->cr.raw.reg = _cs_read32(d, CS_ETMCR);
         /* Extract the port mode and port size */
         c->cr.port_size =
                 (c->cr.raw.c._port_size_3 << 3) | c->cr.raw.c._port_size_20;
@@ -379,14 +379,14 @@ int cs_etm_config_get(cs_device_t dev, struct cs_etm_config *c)
 
     if (c->flags & CS_ETMC_TRACE_ENABLE) {
         unsigned int trace_start_stop;
-        c->trace_enable_event = _cs_read(d, CS_ETMTEEVR);
-        trace_start_stop = _cs_read(d, CS_ETMTSSCR);
+        c->trace_enable_event = _cs_read32(d, CS_ETMTEEVR);
+        trace_start_stop = _cs_read32(d, CS_ETMTSSCR);
         c->trace_start_comparators = trace_start_stop & 0xFFFF;
         c->trace_stop_comparators = trace_start_stop >> 16;
-        c->trace_enable_cr1 = _cs_read(d, CS_ETMTECR1);
+        c->trace_enable_cr1 = _cs_read32(d, CS_ETMTECR1);
         /* This register is not always implemented i.e. PTM */
         if (!is_ptm) {
-            c->trace_enable_cr2 = _cs_read(d, CS_ETMTECR2);
+            c->trace_enable_cr2 = _cs_read32(d, CS_ETMTECR2);
         } else {
             c->trace_enable_cr2 = 0;
         }
@@ -395,25 +395,25 @@ int cs_etm_config_get(cs_device_t dev, struct cs_etm_config *c)
                data/address tracing is available.  To detect that, we'd
                need to try programming ETMCR, as described in [ETM 3.5.1].
                Currently that's not done. */
-            c->vdata_event = _cs_read(d, CS_ETMVDEVR);
-            c->vdata_ctl1 = _cs_read(d, CS_ETMVDCR(0));
-            c->vdata_ctl2 = _cs_read(d, CS_ETMVDCR(1));
-            c->vdata_ctl3 = _cs_read(d, CS_ETMVDCR(2));
+            c->vdata_event = _cs_read32(d, CS_ETMVDEVR);
+            c->vdata_ctl1 = _cs_read32(d, CS_ETMVDCR(0));
+            c->vdata_ctl2 = _cs_read32(d, CS_ETMVDCR(1));
+            c->vdata_ctl3 = _cs_read32(d, CS_ETMVDCR(2));
         }
     }
     if (c->flags & CS_ETMC_TRIGGER_EVENT) {
-        c->trigger_event = _cs_read(d, CS_ETMTRIGGER);
+        c->trigger_event = _cs_read32(d, CS_ETMTRIGGER);
     }
     if ((c->flags & CS_ETMC_TS_EVENT) && version >= CS_ETMVERSION(CS_ETMVERSION_ETMv3, 5)) {
-        c->timestamp_event = _cs_read(d, CS_ETMTSEVR);
+        c->timestamp_event = _cs_read32(d, CS_ETMTSEVR);
     }
     c->addr_comp_mask &= onebits(c->sc->ccr.s.n_addr_comp_pairs * 2);
 
     if (c->flags & CS_ETMC_ADDR_COMP) {
         for (i = 0; i < c->sc->ccr.s.n_addr_comp_pairs * 2U; ++i) {
             if (c->addr_comp_mask & (1U << i)) {
-                c->addr_comp[i].address = _cs_read(d, CS_ETMACVR(i));
-                c->addr_comp[i].access_type = _cs_read(d, CS_ETMACTR(i));
+                c->addr_comp[i].address = _cs_read32(d, CS_ETMACVR(i));
+                c->addr_comp[i].access_type = _cs_read32(d, CS_ETMACTR(i));
             }
         }
     }
@@ -422,8 +422,8 @@ int cs_etm_config_get(cs_device_t dev, struct cs_etm_config *c)
     if ((c->flags & CS_ETMC_DATA_COMP) && (!is_ptm)) {
         for (i = 0; i < c->sc->ccr.s.n_data_comp; ++i) {
             if (c->data_comp_mask & (1U << i)) {
-                c->data_comp[i].value = _cs_read(d, CS_ETMDCVR(i));
-                c->data_comp[i].data_mask = _cs_read(d, CS_ETMDCMR(i));
+                c->data_comp[i].value = _cs_read32(d, CS_ETMDCVR(i));
+                c->data_comp[i].data_mask = _cs_read32(d, CS_ETMDCMR(i));
             }
         }
     }
@@ -435,28 +435,28 @@ int cs_etm_config_get(cs_device_t dev, struct cs_etm_config *c)
         for (i = 0; i < c->sc->ccr.s.n_counters; ++i) {
             if (c->counter_mask & (1U << i)) {
                 c->counter[i].reload_value =
-                        _cs_read(d, CS_ETMCNTRLDVR(i));
-                c->counter[i].enable_event = _cs_read(d, CS_ETMCNTENR(i));
+                        _cs_read32(d, CS_ETMCNTRLDVR(i));
+                c->counter[i].enable_event = _cs_read32(d, CS_ETMCNTENR(i));
                 c->counter[i].reload_event =
-                        _cs_read(d, CS_ETMCNTRLDEVR(i));
-                c->counter[i].value = _cs_read(d, CS_ETMCNTVR(i));
+                        _cs_read32(d, CS_ETMCNTRLDEVR(i));
+                c->counter[i].value = _cs_read32(d, CS_ETMCNTVR(i));
             }
         }
     }
     c->cxid_comp_mask &= onebits(c->sc->ccr.s3x.n_cxid_comp);
     if (c->flags & CS_ETMC_CXID_COMP) {
-        c->cxid_mask = _cs_read(d, CS_ETMCIDCMR);
+        c->cxid_mask = _cs_read32(d, CS_ETMCIDCMR);
         for (i = 0; i < c->sc->ccr.s3x.n_cxid_comp; ++i) {
-            c->cxid_comp[i].cxid = _cs_read(d, CS_ETMCIDCVR(i));
+            c->cxid_comp[i].cxid = _cs_read32(d, CS_ETMCIDCVR(i));
         }
     }
     if (c->flags & CS_ETMC_SEQUENCER) {
         if (c->sc->ccr.s.sequencer_present) {
             unsigned int i;
-            c->sequencer.state = _cs_read(d, CS_ETMSQR) + 1;
+            c->sequencer.state = _cs_read32(d, CS_ETMSQR) + 1;
             for (i = 0; i < CS_ETMSEQ_TRANSITIONS; ++i) {
                 c->sequencer.transition_event[i] =
-                        _cs_read(d, CS_ETMSQEVRRAW(i));
+                        _cs_read32(d, CS_ETMSQEVRRAW(i));
             }
         } else {
             /* No sequencer configuration/status to read */
@@ -467,7 +467,7 @@ int cs_etm_config_get(cs_device_t dev, struct cs_etm_config *c)
     if (c->flags & CS_ETMC_EXTOUT) {
         unsigned int i;
         for (i = 0; i < c->sc->ccr.s.n_ext_out; ++i) {
-            c->extout_event[i] = _cs_read(d, CS_ETMEXTOUTEVR(i));
+            c->extout_event[i] = _cs_read32(d, CS_ETMEXTOUTEVR(i));
         }
     }
     return 0;
@@ -496,41 +496,41 @@ int cs_etm_config_put(cs_device_t dev, struct cs_etm_config *c)
             return cs_report_device_error(d,
                                           "attempt to enable data trace when not available");
         }
-        _cs_write(d, CS_ETMCR, c->cr.raw.reg);
+        _cs_write32(d, CS_ETMCR, c->cr.raw.reg);
     }
     if (c->flags & CS_ETMC_TRACE_ENABLE) {
         unsigned int trace_start_stop =
                 (c->trace_stop_comparators << 16) | c->trace_start_comparators;
-        _cs_write(d, CS_ETMTEEVR, c->trace_enable_event);
-        _cs_write(d, CS_ETMTSSCR, trace_start_stop);
-        _cs_write(d, CS_ETMTECR1, c->trace_enable_cr1);
+        _cs_write32(d, CS_ETMTEEVR, c->trace_enable_event);
+        _cs_write32(d, CS_ETMTSSCR, trace_start_stop);
+        _cs_write32(d, CS_ETMTECR1, c->trace_enable_cr1);
         if (!is_ptm) {
-            _cs_write(d, CS_ETMTECR2, c->trace_enable_cr2);
+            _cs_write32(d, CS_ETMTECR2, c->trace_enable_cr2);
         }
         if (has_data_trace) {
-            _cs_write(d, CS_ETMVDEVR, c->vdata_event);
-            _cs_write(d, CS_ETMVDCR(0), c->vdata_ctl1);
-            _cs_write(d, CS_ETMVDCR(1), c->vdata_ctl2);
-            _cs_write(d, CS_ETMVDCR(2), c->vdata_ctl3);
+            _cs_write32(d, CS_ETMVDEVR, c->vdata_event);
+            _cs_write32(d, CS_ETMVDCR(0), c->vdata_ctl1);
+            _cs_write32(d, CS_ETMVDCR(1), c->vdata_ctl2);
+            _cs_write32(d, CS_ETMVDCR(2), c->vdata_ctl3);
         }
     }
     if (c->flags & CS_ETMC_TRIGGER_EVENT) {
-        _cs_write(d, CS_ETMTRIGGER, c->trigger_event);
+        _cs_write32(d, CS_ETMTRIGGER, c->trigger_event);
     }
     if ((c->flags & CS_ETMC_TS_EVENT) && version >= CS_ETMVERSION(CS_ETMVERSION_ETMv3, 5)) {
-        _cs_write(d, CS_ETMTSEVR, c->timestamp_event);
+        _cs_write32(d, CS_ETMTSEVR, c->timestamp_event);
     }
     if (c->flags & CS_ETMC_ADDR_COMP) {
         for (i = 0; i < c->sc->ccr.s.n_addr_comp_pairs * 2U; ++i) {
             if (c->addr_comp_mask & (1U << i)) {
-                _cs_write(d, CS_ETMACVR(i), c->addr_comp[i].address);
+                _cs_write32(d, CS_ETMACVR(i), c->addr_comp[i].address);
                 atype = (c->addr_comp[i].access_type & 7);
                 if (is_ptm ? (atype != 1) : (atype == 0 && (c->sc->scr.raw.reg & 0x00020000) != 0)) {
                     return cs_report_device_error(d,
                                                   "attempt to program comparator #%u with unsupported Fetch comparison",
                                                   i);
                 }
-                _cs_write(d, CS_ETMACTR(i), c->addr_comp[i].access_type);
+                _cs_write32(d, CS_ETMACTR(i), c->addr_comp[i].access_type);
             }
         }
     }
@@ -538,8 +538,8 @@ int cs_etm_config_put(cs_device_t dev, struct cs_etm_config *c)
     if ((c->flags & CS_ETMC_DATA_COMP) && has_data_trace) {
         for (i = 0; i < c->sc->ccr.s.n_data_comp; ++i) {
             if (c->data_comp_mask & (1U << i)) {
-                _cs_write(d, CS_ETMDCVR(i), c->data_comp[i].value);
-                _cs_write(d, CS_ETMDCMR(i), c->data_comp[i].data_mask);
+                _cs_write32(d, CS_ETMDCVR(i), c->data_comp[i].value);
+                _cs_write32(d, CS_ETMDCMR(i), c->data_comp[i].data_mask);
             }
         }
     }
@@ -553,15 +553,15 @@ int cs_etm_config_put(cs_device_t dev, struct cs_etm_config *c)
                                                   i, c->counter[i].value,
                                                   c->counter[i].reload_value);
                 }
-                _cs_write(d, CS_ETMCNTRLDVR(i),
+                _cs_write32(d, CS_ETMCNTRLDVR(i),
                           c->counter[i].reload_value);
                 /* OR the written value with bit 17, to indicate "count enable source".
                    See ETM architecture spec for details. */
-                _cs_write(d, CS_ETMCNTENR(i),
+                _cs_write32(d, CS_ETMCNTENR(i),
                           c->counter[i].enable_event | 0x20000);
-                _cs_write(d, CS_ETMCNTRLDEVR(i),
+                _cs_write32(d, CS_ETMCNTRLDEVR(i),
                           c->counter[i].reload_event);
-                _cs_write(d, CS_ETMCNTVR(i), c->counter[i].value);
+                _cs_write32(d, CS_ETMCNTVR(i), c->counter[i].value);
             }
         }
         if (c->counter_mask & ~onebits(c->sc->ccr.s.n_counters)) {
@@ -572,10 +572,10 @@ int cs_etm_config_put(cs_device_t dev, struct cs_etm_config *c)
         }
     }
     if (c->flags & CS_ETMC_CXID_COMP) {
-        _cs_write(d, CS_ETMCIDCMR, c->cxid_mask);
+        _cs_write32(d, CS_ETMCIDCMR, c->cxid_mask);
         for (i = 0; i < c->sc->ccr.s3x.n_cxid_comp; ++i) {
             if (c->cxid_comp_mask & (1U << i)) {
-                _cs_write(d, CS_ETMCIDCVR(i), c->cxid_comp[i].cxid);
+                _cs_write32(d, CS_ETMCIDCVR(i), c->cxid_comp[i].cxid);
             }
         }
     }
@@ -587,9 +587,9 @@ int cs_etm_config_put(cs_device_t dev, struct cs_etm_config *c)
                                               "attempt to program invalid sequencer state %u",
                                               c->sequencer.state);
             }
-            _cs_write(d, CS_ETMSQR, c->sequencer.state - 1);
+            _cs_write32(d, CS_ETMSQR, c->sequencer.state - 1);
             for (i = 0; i < CS_ETMSEQ_TRANSITIONS; ++i) {
-                _cs_write(d, CS_ETMSQEVRRAW(i),
+                _cs_write32(d, CS_ETMSQEVRRAW(i),
                           c->sequencer.transition_event[i]);
             }
         } else {
@@ -601,7 +601,7 @@ int cs_etm_config_put(cs_device_t dev, struct cs_etm_config *c)
         unsigned int i;
         for (i = 0; i < c->sc->ccr.s.n_ext_out; ++i) {
             if (c->extout_mask & (1U << i)) {
-                _cs_write(d, CS_ETMEXTOUTEVR(i), c->extout_event[i]);
+                _cs_write32(d, CS_ETMEXTOUTEVR(i), c->extout_event[i]);
             }
         }
     }

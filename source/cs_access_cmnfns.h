@@ -409,43 +409,43 @@ extern int cs_device_init(struct cs_device *d, cs_physaddr_t addr);
 extern struct cs_device *cs_device_new(cs_physaddr_t addr,
                                        void volatile *local_addr);
 
-extern uint32_t volatile *_cs_get_register_address(struct cs_device *d,
-                                                   unsigned int off);
-extern uint32_t _cs_read(struct cs_device *d, unsigned int off);
+extern uint32_t volatile *_cs_get_register_address32(struct cs_device *d,
+                                                     unsigned int off);
+extern uint32_t _cs_read32(struct cs_device *d, unsigned int off);
 extern uint64_t _cs_read64(struct cs_device *d, unsigned int off);
 
-extern int _cs_write_wo(struct cs_device *d, unsigned int off,
-                        uint32_t data);
+extern int _cs_write32_wo(struct cs_device *d, unsigned int off,
+                          uint32_t data);
 extern int _cs_write64_wo(struct cs_device *d, unsigned int off,
                           uint64_t data);
-extern int _cs_write_wo_traced(struct cs_device *d, unsigned int off,
-                               uint32_t data, char const *oname);
-extern int _cs_write_traced(struct cs_device *d, unsigned int off,
-                            uint32_t data, char const *oname);
+extern int _cs_write32_wo_traced(struct cs_device *d, unsigned int off,
+                                 uint32_t data, char const *oname);
+extern int _cs_write32_traced(struct cs_device *d, unsigned int off,
+                              uint32_t data, char const *oname);
 extern int _cs_write64_traced(struct cs_device *d, unsigned int off,
                               uint64_t data, char const *oname);
-extern int _cs_write_mask(struct cs_device *d, unsigned int off,
+extern int _cs_write32_mask(struct cs_device *d, unsigned int off,
+                            uint32_t mask, uint32_t data);
+extern int _cs_set32_mask(struct cs_device *d, unsigned int off,
                           uint32_t mask, uint32_t data);
-extern int _cs_set_mask(struct cs_device *d, unsigned int off,
-                        uint32_t mask, uint32_t data);
-extern int _cs_set_bit(struct cs_device *d, unsigned int off,
-                       uint32_t mask, int value);
-extern int _cs_set(struct cs_device *d, unsigned int off,
-                   uint32_t bits);
-extern int _cs_set_wo(struct cs_device *d, unsigned int off,
-                      uint32_t bits);
-extern int _cs_clear(struct cs_device *d, unsigned int off,
+extern int _cs_set32_bit(struct cs_device *d, unsigned int off,
+                         uint32_t mask, int value);
+extern int _cs_set32(struct cs_device *d, unsigned int off,
                      uint32_t bits);
-extern int _cs_isset(struct cs_device *d, unsigned int off,
-                     uint32_t bits);
-extern void _cs_set_wait_iterations(int iterations);
-extern int _cs_wait(struct cs_device *d, unsigned int off,
-                    uint32_t bits);
-extern int _cs_waitnot(struct cs_device *d, unsigned int off,
+extern int _cs_set32_wo(struct cs_device *d, unsigned int off,
+                        uint32_t bits);
+extern int _cs_clear32(struct cs_device *d, unsigned int off,
                        uint32_t bits);
-extern int _cs_waitbits(struct cs_device *d, unsigned int off,
-                        uint32_t bits, cs_reg_waitbits_op_t operation,
-                        uint32_t pattern, uint32_t *p_last_val);
+extern int _cs_isset32(struct cs_device *d, unsigned int off,
+                       uint32_t bits);
+extern int _cs_wait32(struct cs_device *d, unsigned int off,
+                      uint32_t bits);
+extern int _cs_waitnot32(struct cs_device *d, unsigned int off,
+                         uint32_t bits);
+extern int _cs_waitbits32(struct cs_device *d, unsigned int off,
+                          uint32_t bits, cs_reg_waitbits_op_t operation,
+                          uint32_t pattern, uint32_t *p_last_val);
+extern void _cs_set_wait_iterations(int iterations);
 
 /* Raw primitives for accessing any claim tags */
 extern int _cs_claim_tag(struct cs_device *d, uint32_t bit);
@@ -462,7 +462,7 @@ extern int _cs_is_lockable(struct cs_device *d);
 extern int _cs_unlock(struct cs_device *d);
 extern int _cs_lock(struct cs_device *d);
 
-#define _cs_write(d, off, data) _cs_write_traced(d, off, data, #off)
+#define _cs_write32(d, off, data) _cs_write32_traced(d, off, data, #off)
 #define _cs_write64(d, off, data) _cs_write64_traced(d, off, data, #off)
 
 /* Non API fns in cs_sw_stim.c */

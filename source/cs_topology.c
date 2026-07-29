@@ -77,13 +77,13 @@ static cs_device_t cs_device_registration_fail(struct cs_device *d)
 static int cs_is_arm_arch(struct cs_device *d, unsigned int arch)
 {
     /* TBD: should also check JEDEC architect code */
-    return (_cs_read(d, CS_DEVARCH) & 0xFFFF) == arch;
+    return (_cs_read32(d, CS_DEVARCH) & 0xFFFF) == arch;
 }
 
 
 static int cs_is_romtable(struct cs_device *d)
 {
-    unsigned int dc = CS_CLASS_OF(_cs_read(d, CS_CIDR1));
+    unsigned int dc = CS_CLASS_OF(_cs_read32(d, CS_CIDR1));
     if (dc == CS_CLASS_ROMTABLE) {
         return 1;
     } else if (dc == CS_CLASS_CORESIGHT && cs_is_arm_arch(d, CS_ARM_ARCHID_ROM)) {
@@ -162,12 +162,12 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
             return CS_ERRDESC;
         }
     }
-    if (_cs_read(&protod, CS_CIDR3) != 0xB1) {
+    if (_cs_read32(&protod, CS_CIDR3) != 0xB1) {
         cs_report_error("not a CoreSight component at %" CS_PHYSFMT "", addr);
         _cs_unmap(&protod);
         return CS_ERRDESC;
     }
-    cs_class = CS_CLASS_OF(_cs_read(&protod, CS_CIDR1));
+    cs_class = CS_CLASS_OF(_cs_read32(&protod, CS_CIDR1));
     if (cs_is_romtable(&protod)) {
         /* Recursively scan a secondary ROM table */
         cs_scan_romtable(&protod);
@@ -189,17 +189,17 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
             diagf("%" CS_PHYSFMT ":", d->phys_addr);
         }
 
-        d->devtype_from_id = cs_device_read(d, CS_DEVTYPE);
-        d->devaff0 = cs_device_read(d, CS_DEVAFF0);
+        d->devtype_from_id = cs_device_read32(d, CS_DEVTYPE);
+        d->devaff0 = cs_device_read32(d, CS_DEVAFF0);
         if (d->devaff0 != 0) {
             G.devaff0_used = 1;
         }
-        devaff1 = cs_device_read(d, CS_DEVAFF1);
-        devid = cs_device_read(d, CS_DEVID);
-        devarch = cs_device_read(d, CS_DEVARCH);
+        devaff1 = cs_device_read32(d, CS_DEVAFF1);
+        devid = cs_device_read32(d, CS_DEVID);
+        devarch = cs_device_read32(d, CS_DEVARCH);
         /* Get the 3-digit PrimeCell device number */
         d->part_number =
-                ((_cs_read(d, CS_PIDR1) & 0xF) << 8) | (_cs_read(d, CS_PIDR0) &
+                ((_cs_read32(d, CS_PIDR1) & 0xF) << 8) | (_cs_read32(d, CS_PIDR0) &
                                                         0xFF);
 
         /* For example, device type 0x13 is major=3, minor=1 */
@@ -209,7 +209,7 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
         /* Just in case the component's already unlocked when we register it,
            ensure our cached flag of its lock status is correctly set. */
         {
-            uint32_t const lsr = _cs_read(d, CS_LSR);
+            uint32_t const lsr = _cs_read32(d, CS_LSR);
             d->is_permanently_unlocked = !(lsr & CS_LSR_SLI);
             d->is_unlocked = !(lsr & CS_LSR_SLK);
         }
@@ -221,8 +221,8 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                 diagf(" %08X %08X", devaff0, devaff1);
             }
             diagf(" %08X", devid);
-            diagf(" %02X/%02X", _cs_read(d, CS_CLAIMCLR) & 0xFF,
-                  _cs_read(d, CS_CLAIMSET) & 0xFF);
+            diagf(" %02X/%02X", _cs_read32(d, CS_CLAIMCLR) & 0xFF,
+                  _cs_read32(d, CS_CLAIMSET) & 0xFF);
         }
 
         /* Arm internal: see http://wiki.arm.com/Eng/PerphIDRegs */
@@ -248,13 +248,13 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                        0 for ETB, 1 for ETR, 2 for ETF, 3 for ETS. */
                     d->v.etb.tmc.config_type = ((devid >> 6) & 0x3);
                     d->v.etb.buffer_size_bytes =
-                            _cs_read(d, CS_ETB_RAM_DEPTH) << 2;
+                            _cs_read32(d, CS_ETB_RAM_DEPTH) << 2;
                     d->v.etb.pointer_scale_shift = 0;
                     d->v.etb.tmc.memory_width = ((devid >> 8) & 0x7);
                 } else {
                     d->v.etb.is_tmc_device = 0;
                     d->v.etb.buffer_size_bytes =
-                            _cs_read(d,
+                            _cs_read32(d,
                                      CS_ETB_RAM_DEPTH)
                             << ETB_WIDTH_SCALE_SHIFT;
                     d->v.etb.pointer_scale_shift = ETB_WIDTH_SCALE_SHIFT;
@@ -283,11 +283,11 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                    1 = Software FIFO mode
                    0 = Circular Buffer mode
                 */
-                /*_cs_write(d, CS_TMC_MODE, 0); pick teh mode later */
+                /*_cs_write32(d, CS_TMC_MODE, 0); pick teh mode later */
                 d->v.etb.is_tmc_device = 1;
                 /* Find buffer size - for TMC this is always in 32-bit words */
                 d->v.etb.buffer_size_bytes =
-                        _cs_read(d, CS_ETB_RAM_DEPTH) << 2;
+                        _cs_read32(d, CS_ETB_RAM_DEPTH) << 2;
                 d->v.etb.pointer_scale_shift = 0;
                 d->v.etb.tmc.config_type = ((devid >> 6) & 0x3); /* For a link, expect ETF */
                 d->v.etb.tmc.memory_width = ((devid >> 8) & 0x7);
@@ -308,13 +308,13 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                 d->v.etm.etmidr = 0;
 
                 /* NB - ETM v4 does not have the CCR - and this bit is always one in a CoreSight ETM anyway
-                   if (_cs_read(d, CS_ETMCCR) & 0x80000000) {
-                   d->v.etm.etmidr = _cs_read(d, CS_ETMIDR);
+                   if (_cs_read32(d, CS_ETMCCR) & 0x80000000) {
+                   d->v.etm.etmidr = _cs_read32(d, CS_ETMIDR);
                    } else {
                    d->v.etm.etmidr = 0;
                    } */
                 /* always read the ETMIDR - establish the ETM architecture version */
-                d->v.etm.etmidr = _cs_read(d, CS_ETMIDR); /* same place on each etm */
+                d->v.etm.etmidr = _cs_read32(d, CS_ETMIDR); /* same place on each etm */
 
                 /* Store static configuration of ETM/PTM in device struct */
 
@@ -389,11 +389,11 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                     /* v8 Arch core */
                     d->v.debug.debug_arch = 0x8;
                     /* Bottom half of EDDFR contains similar data to v7 DIDR. */
-                    d->v.debug.didr = _cs_read(d, CS_V8EDDFR_l);
+                    d->v.debug.didr = _cs_read32(d, CS_V8EDDFR_l);
                     if ((devarch & 0xFFFF0FFF) == 0x47700A15) {
                         d->v.debug.didr = (d->v.debug.didr & 0xFFFFFFF0) | ((devarch >> 12) & 0xF);
                     }
-                    d->v.debug.devid = _cs_read(d, CS_V8EDDEVID);
+                    d->v.debug.devid = _cs_read32(d, CS_V8EDDEVID);
                     if ((d->v.debug.devid & 0xf) != 0) {
                         d->v.debug.pcsamplereg = CS_DBGPCSR_40;
                     } else {
@@ -402,10 +402,10 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                 } else {
                     /* v7 arch core */
                     d->v.debug.debug_arch = 0x7;
-                    d->v.debug.didr = _cs_read(d, CS_DBGDIDR);
+                    d->v.debug.didr = _cs_read32(d, CS_DBGDIDR);
                     if (((d->v.debug.didr >> 16) & 0xF) >= 0x5 ||
                         (d->v.debug.didr & CS_DBGDIDR_DEVID_imp) != 0) {
-                        d->v.debug.devid = _cs_read(d, CS_DBGDEVID);
+                        d->v.debug.devid = _cs_read32(d, CS_DBGDEVID);
                     } else {
                         d->v.debug.devid = 0;
                     }
@@ -421,9 +421,9 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
                 }
             } else if (minor == 7) {
                 /* logic analysers - Stygian or ELA-500 or ELA-600 */
-                uint32_t const devid = _cs_read(d, CS_ELA_DEVID);
-                uint32_t const devid1 = _cs_read(d, CS_ELA_DEVID1);
-                uint32_t const devid2 = _cs_read(d, CS_ELA_DEVID2);
+                uint32_t const devid = _cs_read32(d, CS_ELA_DEVID);
+                uint32_t const devid1 = _cs_read32(d, CS_ELA_DEVID1);
+                uint32_t const devid2 = _cs_read32(d, CS_ELA_DEVID2);
                 d->devclass |= CS_DEVCLASS_TRIGSRC | CS_DEVCLASS_ELA;
                 d->type = DEV_ELA;
                 d->v.ela.is_ela600 = ((devarch >> 16) & 0xF) >= 1;
@@ -446,11 +446,11 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
             if (minor == 1) {
                 d->devclass |= CS_DEVCLASS_CPU;
                 d->type = DEV_CPU_PMU;
-                d->v.pmu.cfgr = _cs_read(d, CS_PMCFGR);
+                d->v.pmu.cfgr = _cs_read32(d, CS_PMCFGR);
                 /* Number of counters will be in PMCFGR, but PMCR may be more correct */
                 d->v.pmu.n_counters = d->v.pmu.cfgr & 0xFF;
                 {
-                    unsigned int pmcr = _cs_read(d, CS_PMCR);
+                    unsigned int pmcr = _cs_read32(d, CS_PMCR);
                     unsigned int n = (pmcr >> 11) & 0x1F;
                     if (n != 0 && n != d->v.pmu.n_counters) {
                         d->v.pmu.n_counters = n;
@@ -468,8 +468,8 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
             }
         } else if (devarch != 0) {
             if ((devarch & 0xFFFF) == CS_ARM_ARCHID_MEMAP) {
-                unsigned int cfg = _cs_read(d, CS_MEMAP_CFG);
-                /* unsigned int idr = _cs_read(d, CS_MEMAP_IDR); */
+                unsigned int cfg = _cs_read32(d, CS_MEMAP_CFG);
+                /* unsigned int idr = _cs_read32(d, CS_MEMAP_IDR); */
                 d->devclass |= CS_DEVCLASS_MEMAP;
                 d->v.memap.DAR_present = (((cfg >> 4) & 0xF) == 0xA);
                 d->v.memap.memap_LPAE = (cfg & CS_MEMAP_CFG_LA) != 0;
@@ -497,8 +497,8 @@ static cs_device_t cs_device_or_romtable_register(cs_physaddr_t addr)
         /* CIDR1.CLASS == 0x0F. Wouldn't normally be seen in a CoreSight ROM table. */
         /* CoreSight timestamp generators do have these non-CoreSight ids though. */
         unsigned int part_number =
-                ((_cs_read(&protod, CS_PIDR1) & 0xF) << 8) |
-                (_cs_read(&protod, CS_PIDR0) & 0xFF);
+                ((_cs_read32(&protod, CS_PIDR1) & 0xF) << 8) |
+                (_cs_read32(&protod, CS_PIDR0) & 0xFF);
         if (cs_primecell_is_tsgen(part_number)) {
             d = cs_device_new(protod.phys_addr, protod.local_addr);
             if (d == NULL) {
@@ -679,7 +679,7 @@ void cs_device_diag_summary(cs_device_t dev)
                 }
             }
             {
-                unsigned int dscr = _cs_read(d, CS_DBGDSCR);
+                unsigned int dscr = _cs_read32(d, CS_DBGDSCR);
                 if (dscr & CS_DBGDSCR_NS) {
                     diagf("; non-Secure, ");
                 } else {
@@ -698,7 +698,7 @@ void cs_device_diag_summary(cs_device_t dev)
         }
         if (d->devclass & (CS_DEVCLASS_DEBUG | CS_DEVCLASS_PMU)) {
             /* CS_DBGAUTHSTATUS == CS_PMAUTHSTATUS */
-            unsigned int auth = _cs_read(d, CS_DBGAUTHSTATUS);
+            unsigned int auth = _cs_read32(d, CS_DBGAUTHSTATUS);
             /* There are 4 types of authentication:
                SNI[7:6], SI[5:4], NSNI[3:2], NSI[1:0] */
             /* Each has 3 states: 00 (n.imp.), 10 (imp.dis), 11 (imp.en) */
@@ -708,7 +708,7 @@ void cs_device_diag_summary(cs_device_t dev)
             diagf(" TIMESTAMP");
         }
         if (d->devclass & CS_DEVCLASS_MEMAP) {
-            unsigned int idr = _cs_read(d, 0xDFC);
+            unsigned int idr = _cs_read32(d, 0xDFC);
             diagf(" type:%u", (idr & 0xF));
             if (d->v.memap.DAR_present) {
                 diagf(" DAR");
@@ -773,7 +773,7 @@ static int cs_scan_romtable(struct cs_device *d)
        the next 4-byte boundary, until a value of 0x00000000 is read which
        is the final entry." */
     for (i = 0; i <= 0xEFC; i += 4) {
-        unsigned int entry = _cs_read(d, i);
+        unsigned int entry = _cs_read32(d, i);
         if (entry == 0x00000000) {
             break;
         }

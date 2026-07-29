@@ -38,7 +38,7 @@ static cs_pmu_mask_t cs_pmu_mask(struct cs_device const *d)
 uint32_t cs_pmu_read_counter(cs_device_t dev, unsigned int n)
 {
     struct cs_device *d = DEV(dev);
-    return _cs_read(d, CS_PMEVCNTR(n, d->v.pmu.map_scale));
+    return _cs_read32(d, CS_PMEVCNTR(n, d->v.pmu.map_scale));
 }
 
 
@@ -50,7 +50,7 @@ int cs_pmu_get_counts(cs_device_t dev, unsigned int mask,
     assert(d->type == DEV_CPU_PMU);
     if (cycles != NULL) {
         if (d->v.pmu.map_scale == 2) {
-            *cycles = _cs_read(d, CS_PMCCNTR);
+            *cycles = _cs_read32(d, CS_PMCCNTR);
         } else {
             /* The architecture doesn't guarantee single-copy atomic access,
                and recommends a high-low-high read sequence. */
@@ -70,18 +70,18 @@ int cs_pmu_get_counts(cs_device_t dev, unsigned int mask,
            (overflows between reading the count and the flags)
            overflow=1
            which looks like we've read more than 2**32 counts. */
-        unsigned int oflow = _cs_read(d, CS_PMOVSR);
+        unsigned int oflow = _cs_read32(d, CS_PMOVSR);
         *overflow = oflow;
         if (oflow != 0) {
             /* Write these flags back, to reset the overflow flags.
                This requires the PMU to be in unlocked state. */
-            _cs_write_wo(d, CS_PMOVSR, oflow);
-            if ((_cs_read(d, CS_PMOVSR) & oflow) != 0) {
+            _cs_write32_wo(d, CS_PMOVSR, oflow);
+            if ((_cs_read32(d, CS_PMOVSR) & oflow) != 0) {
                 /* If we failed to reset some of those flags, then we might not have
                    write access to the PMU. */
                 _cs_unlock(d);
-                _cs_write_wo(d, CS_PMOVSR, oflow);
-                assert((_cs_read(d, CS_PMOVSR) & oflow) == 0);
+                _cs_write32_wo(d, CS_PMOVSR, oflow);
+                assert((_cs_read32(d, CS_PMOVSR) & oflow) == 0);
                 /* As we're likely to be repeatedly sampling the PMU, we don't
                    re-lock it, so we should take the fast path next time. */
             }
@@ -93,7 +93,7 @@ int cs_pmu_get_counts(cs_device_t dev, unsigned int mask,
         for (i = 0, j = 0; mask != 0; ++i) {
             if ((mask & 1) != 0) {
                 counts[j++] =
-                        _cs_read(d, CS_PMEVCNTR(i, d->v.pmu.map_scale));
+                        _cs_read32(d, CS_PMEVCNTR(i, d->v.pmu.map_scale));
             }
             mask >>= 1;
         }
@@ -110,14 +110,14 @@ int cs_pmu_read_status(cs_device_t dev, unsigned int flags,
 
     assert(d->type == DEV_CPU_PMU);
     if (flags & (CS_PMU_DISABLE | CS_PMU_DIV64 | CS_PMU_ENABLE)) {
-        pmcr = _cs_read(d, CS_PMCR);
+        pmcr = _cs_read32(d, CS_PMCR);
         if (flags & CS_PMU_DISABLE) {
-            _cs_write(d, CS_PMCR, pmcr & ~CS_PMCR_E);
+            _cs_write32(d, CS_PMCR, pmcr & ~CS_PMCR_E);
         }
     }
     if (flags & CS_PMU_CYCLES) {
         if (d->v.pmu.map_scale == 2) {
-            status->cycles = _cs_read(d, CS_PMCCNTR);
+            status->cycles = _cs_read32(d, CS_PMCCNTR);
         } else {
             status->cycles = _cs_read64(d, CS_PMEVCNTR64(31));
         }
@@ -126,7 +126,7 @@ int cs_pmu_read_status(cs_device_t dev, unsigned int flags,
         status->div64 = (pmcr & CS_PMCR_D) != 0;
     }
     if (flags & CS_PMU_OVERFLOW) {
-        status->overflow = _cs_read(d, CS_PMOVSR);
+        status->overflow = _cs_read32(d, CS_PMOVSR);
     }
     /* Mask off the unimplemented counters bits - but leave the cycle counter. */
     status->mask &= cs_pmu_mask(d);
@@ -136,18 +136,18 @@ int cs_pmu_read_status(cs_device_t dev, unsigned int flags,
         for (i = 0; i < 31 && mask != 0; ++i) {
             if (mask & 1) {
                 if (flags & CS_PMU_EVENTTYPES) {
-                    status->eventtypes[i] = _cs_read(d, CS_PMXEVTYPER(i));
+                    status->eventtypes[i] = _cs_read32(d, CS_PMXEVTYPER(i));
                 }
                 if (flags & CS_PMU_COUNTS) {
                     status->counts[i] =
-                            _cs_read(d, CS_PMEVCNTR(i, d->v.pmu.map_scale));
+                            _cs_read32(d, CS_PMEVCNTR(i, d->v.pmu.map_scale));
                 }
             }
             mask >>= 1;
         }
     }
     if (flags & CS_PMU_ENABLE) {
-        _cs_write(d, CS_PMCR, pmcr | CS_PMCR_E);
+        _cs_write32(d, CS_PMCR, pmcr | CS_PMCR_E);
     }
     return 0;
 }
@@ -162,9 +162,9 @@ int cs_pmu_write_status(cs_device_t dev, unsigned int flags,
 
     _cs_unlock(d);
     if (flags & (CS_PMU_DISABLE | CS_PMU_DIV64 | CS_PMU_ENABLE)) {
-        pmcr = _cs_read(d, CS_PMCR);
+        pmcr = _cs_read32(d, CS_PMCR);
         if (flags & CS_PMU_DISABLE) {
-            _cs_write(d, CS_PMCR, pmcr & ~CS_PMCR_E);
+            _cs_write32(d, CS_PMCR, pmcr & ~CS_PMCR_E);
         }
     }
     if (flags & (CS_PMU_EVENTTYPES | CS_PMU_COUNTS)) {
@@ -173,10 +173,10 @@ int cs_pmu_write_status(cs_device_t dev, unsigned int flags,
         for (i = 0; i <= 31 && mask != 0; ++i) {
             if (mask & 1) {
                 if (flags & CS_PMU_EVENTTYPES) {
-                    _cs_write(d, CS_PMXEVTYPER(i), status->eventtypes[i]);
+                    _cs_write32(d, CS_PMXEVTYPER(i), status->eventtypes[i]);
                 }
                 if (flags & CS_PMU_COUNTS) {
-                    _cs_write(d, CS_PMEVCNTR(i, d->v.pmu.map_scale),
+                    _cs_write32(d, CS_PMEVCNTR(i, d->v.pmu.map_scale),
                               status->counts[i]);
                 }
             }
@@ -185,7 +185,7 @@ int cs_pmu_write_status(cs_device_t dev, unsigned int flags,
     }
     if (flags & CS_PMU_CYCLES) {
         if (d->v.pmu.map_scale == 2) {
-            _cs_write(d, CS_PMCCNTR, status->cycles);
+            _cs_write32(d, CS_PMCCNTR, status->cycles);
         } else {
             _cs_write64(d, CS_PMEVCNTR64(31), status->cycles);
         }
@@ -198,7 +198,7 @@ int cs_pmu_write_status(cs_device_t dev, unsigned int flags,
         pmcr = (pmcr & ~0x08) | (status->div64 << 3);
     }
     if (flags & (CS_PMU_ENABLE | CS_PMU_DIV64)) {
-        _cs_write(d, CS_PMCR, pmcr);
+        _cs_write32(d, CS_PMCR, pmcr);
     }
     return 0;
 }
@@ -212,11 +212,11 @@ int cs_pmu_reset(cs_device_t dev, unsigned int flags)
     if (flags & CS_PMU_ENABLE) {
         /* If we're going to enable the PMU, enable all its counters.
            Read-back should show that exactly these counters are now enabled. */
-        _cs_write(d, CS_PMCNTENSET, cs_pmu_mask(d));
+        _cs_write32(d, CS_PMCNTENSET, cs_pmu_mask(d));
     }
     if (flags &
         (CS_PMU_CYCLES | CS_PMU_COUNTS | CS_PMU_ENABLE | CS_PMU_DISABLE)) {
-        unsigned int pmcr = _cs_read(d, CS_PMCR);
+        unsigned int pmcr = _cs_read32(d, CS_PMCR);
         if (flags & CS_PMU_CYCLES) {
             pmcr |= CS_PMCR_C;
         }
@@ -229,10 +229,10 @@ int cs_pmu_reset(cs_device_t dev, unsigned int flags)
         if (flags & CS_PMU_DISABLE) {
             pmcr &= ~CS_PMCR_E;
         }
-        _cs_write_wo(d, CS_PMCR, pmcr);
+        _cs_write32_wo(d, CS_PMCR, pmcr);
     }
     if (flags & CS_PMU_OVERFLOW) {
-        _cs_write_wo(d, CS_PMOVSR, cs_pmu_mask(d));
+        _cs_write32_wo(d, CS_PMOVSR, cs_pmu_mask(d));
     }
     return 0;
 }
@@ -245,12 +245,12 @@ int cs_pmu_bus_export(cs_device_t dev, int enable)
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_CPU_PMU);
     _cs_unlock(d);
-    pmcr = _cs_read(d, CS_PMCR);
+    pmcr = _cs_read32(d, CS_PMCR);
     if (!enable) {
-        return _cs_write(d, CS_PMCR, pmcr & ~CS_PMCR_X);
+        return _cs_write32(d, CS_PMCR, pmcr & ~CS_PMCR_X);
     } else {
-        _cs_write_wo(d, CS_PMCR, pmcr | CS_PMCR_X);
-        pmcr = _cs_read(d, CS_PMCR);
+        _cs_write32_wo(d, CS_PMCR, pmcr | CS_PMCR_X);
+        pmcr = _cs_read32(d, CS_PMCR);
         /* Return 0 if PMCR.X now reports as set. */
         return (pmcr & CS_PMCR_X) ? 0 : -1;
     }
@@ -261,7 +261,7 @@ int cs_pmu_is_enabled(cs_device_t dev)
 {
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_CPU_PMU);
-    return _cs_isset(d, CS_PMCR, CS_PMCR_E);
+    return _cs_isset32(d, CS_PMCR, CS_PMCR_E);
 }
 
 
@@ -288,18 +288,18 @@ int cs_pmu_get_pc_sample(cs_device_t dev, cs_virtaddr_t *pc,
         }
     } else {
         /* reading low word triggers sample */
-        uint32_t lo = _cs_read(d, CS_PMPCSR);
+        uint32_t lo = _cs_read32(d, CS_PMPCSR);
 #ifdef CS_VA64BIT
-        uint32_t hi = _cs_read(d, CS_PMPCSR + 4);
+        uint32_t hi = _cs_read32(d, CS_PMPCSR + 4);
         pcx = ((cs_virtaddr_t)hi << 32) | lo;
 #else
         pcx = lo;
 #endif
         if (cid) {
-            *cid = _cs_read(d, CS_PMCID1SR);
+            *cid = _cs_read32(d, CS_PMCID1SR);
         }
         if (vmid) {
-            *vmid = _cs_read(d, CS_PMVIDSR);
+            *vmid = _cs_read32(d, CS_PMVIDSR);
         }
     }
     if (pc) {

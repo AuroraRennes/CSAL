@@ -36,19 +36,19 @@ static int cs_debug_v8_pc_sample(struct cs_device *d, cs_virtaddr_t *pc,
     }
 
     /* check target processor is powered, running and accessible */
-    regval = _cs_read(d, CS_V8EDPRSR);
+    regval = _cs_read32(d, CS_V8EDPRSR);
     if ((regval & CS_V8EDPRSR_COREOK_MSK) != CS_V8EDPRSR_COREOK_VAL)
         return -1;
 
     /* grab the PC - this "snapshots" the VMID and Context ID/ */
-    regval = _cs_read(d, CS_V8EDPCSR_l);
+    regval = _cs_read32(d, CS_V8EDPCSR_l);
 
     /* if we really want the PC then set the output value */
     if (pc != NULL) {
         if (G.virt_addr_64bit) { /* built with 64 bit address values */
                                  /* only compile this if we have 64 bit VA - will generate compile warning otherwise. */
 #ifdef CS_VA64BIT
-            uint32_t regval_h = _cs_read(d, CS_V8EDPCSR_h);
+            uint32_t regval_h = _cs_read32(d, CS_V8EDPCSR_h);
             pc_sample = (((cs_virtaddr_t)regval_h) & 0xFFFFFFFF) << 32;
 #endif
         }
@@ -58,13 +58,13 @@ static int cs_debug_v8_pc_sample(struct cs_device *d, cs_virtaddr_t *pc,
 
     /* context ID always present  - get it if requested */
     if (cid != NULL)
-        *cid = _cs_read(d, CS_V8EDCIDSR);
+        *cid = _cs_read32(d, CS_V8EDCIDSR);
 
     /* check if VM ID wanted */
     if (vmid != NULL) {
         if ((d->v.debug.devid & CS_V8EDDEVID_SMPL_MSK) ==
             CS_V8EDDEVID_SMPL_P_C_V) {
-            *vmid = _cs_read(d, CS_V8EDVIDSR);
+            *vmid = _cs_read32(d, CS_V8EDVIDSR);
         }
     }
     return 0;
@@ -85,17 +85,17 @@ int cs_debug_get_pc_sample(cs_device_t dev, cs_virtaddr_t *pc,
     if (d->v.debug.pcsamplereg != 0) {
         /* Take a PC sample whatever happens, as this causes the other
            sample registers to be read synchronously */
-        cs_virtaddr_t samp = _cs_read(d, d->v.debug.pcsamplereg);
+        cs_virtaddr_t samp = _cs_read32(d, d->v.debug.pcsamplereg);
         if (pc != NULL) {
             *pc = samp;
         }
         if ((d->v.debug.devid & 0xF) >= 2) {
             if (cid != NULL) {
-                *cid = _cs_read(d, CS_DBGCIDSR);
+                *cid = _cs_read32(d, CS_DBGCIDSR);
             }
             if ((d->v.debug.devid & 0xF) >= 3) {
                 if (vmid != NULL) {
-                    *vmid = _cs_read(d, CS_DBGVIDSR);
+                    *vmid = _cs_read32(d, CS_DBGVIDSR);
                 }
             }
         }

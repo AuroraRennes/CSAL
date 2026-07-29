@@ -112,7 +112,7 @@ static int read_regs(struct cs_device *d, unsigned int off, unsigned int n_words
 {
     unsigned int i;
     for (i = 0; i < n_words; ++i) {
-        data[i] = _cs_read(d, off + (4 * i));
+        data[i] = _cs_read32(d, off + (4 * i));
     }
     return 0;
 }
@@ -128,7 +128,7 @@ static int write_regs(struct cs_device *d, unsigned int off, unsigned int n, uin
 {
     unsigned int i;
     for (i = 0; i < n; ++i) {
-        _cs_write(d, off + (4 * i), data[i]);
+        _cs_write32(d, off + (4 * i), data[i]);
     }
     return 0;
 }
@@ -137,10 +137,10 @@ int cs_ela_get_config(cs_device_t dev, cs_ela_config_t *c)
 {
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_ELA);
-    c->ptaction = _cs_read(d, CS_ELA_PTACTION);
-    c->timectrl = _cs_read(d, CS_ELA_TIMECTRL);
+    c->ptaction = _cs_read32(d, CS_ELA_PTACTION);
+    c->timectrl = _cs_read32(d, CS_ELA_TIMECTRL);
     if (ela_is_600(d)) {
-        c->counter_select = _cs_read(d, CS_ELA_CNTSEL);
+        c->counter_select = _cs_read32(d, CS_ELA_CNTSEL);
     } else {
         c->counter_select = 0;
     }
@@ -153,8 +153,8 @@ int cs_ela_get_atb_config(cs_device_t dev, cs_ela_atb_config_t *c)
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_ELA);
     if (ela_has_atb(d)) {
-        c->atbctrl = _cs_read(d, CS_ELA_ATBCTRL);
-        c->auxctrl = _cs_read(d, CS_ELA_AUXCTRL);
+        c->atbctrl = _cs_read32(d, CS_ELA_ATBCTRL);
+        c->auxctrl = _cs_read32(d, CS_ELA_AUXCTRL);
     } else {
         return -1;
     }
@@ -166,10 +166,10 @@ int cs_ela_set_config(cs_device_t dev, cs_ela_config_t const *c)
 {
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_ELA);
-    _cs_write(d, CS_ELA_PTACTION, c->ptaction);
-    _cs_write(d, CS_ELA_TIMECTRL, c->timectrl);
+    _cs_write32(d, CS_ELA_PTACTION, c->ptaction);
+    _cs_write32(d, CS_ELA_TIMECTRL, c->timectrl);
     if (d->v.ela.n_trigger_states >= 5) {
-        _cs_write(d, CS_ELA_TSSR, c->tssr);
+        _cs_write32(d, CS_ELA_TSSR, c->tssr);
     } else {
         assert(c->tssr == 0);
         if (c->tssr != 0) {
@@ -177,7 +177,7 @@ int cs_ela_set_config(cs_device_t dev, cs_ela_config_t const *c)
         }
     }
     if (ela_is_600(d)) {
-        _cs_write(d, CS_ELA_CNTSEL, c->counter_select);
+        _cs_write32(d, CS_ELA_CNTSEL, c->counter_select);
     } else {
         assert(c->counter_select == 0);
         if (c->counter_select != 0) {
@@ -194,9 +194,9 @@ int cs_ela_set_atb_config(cs_device_t dev, cs_ela_atb_config_t const *c)
     assert(d->type == DEV_ELA);
     if (ela_has_atb(d)) {
         /* Avoid writing the ATID. Caller must call cs_set_trace_source_id(). */
-        uint32_t old_atbctrl_atid = _cs_read(d, CS_ELA_ATBCTRL) & 0x0000ff00;
-        _cs_write(d, CS_ELA_ATBCTRL, (c->atbctrl & ~0x0000ff00) | old_atbctrl_atid);
-        _cs_write(d, CS_ELA_AUXCTRL, c->auxctrl);
+        uint32_t old_atbctrl_atid = _cs_read32(d, CS_ELA_ATBCTRL) & 0x0000ff00;
+        _cs_write32(d, CS_ELA_ATBCTRL, (c->atbctrl & ~0x0000ff00) | old_atbctrl_atid);
+        _cs_write32(d, CS_ELA_AUXCTRL, c->auxctrl);
     } else {
         return -1;
     }
@@ -211,23 +211,23 @@ int cs_ela_get_trigconf(cs_device_t dev, unsigned int ts, cs_ela_trigconf_t *tc)
     if (ts >= d->v.ela.n_trigger_states) {
         return -1;
     }
-    tc->signal_group = _cs_read(d, CS_ELA_SIGSEL(ts));
-    tc->trigger_control = _cs_read(d, CS_ELA_TRIGCTRL(ts));
-    tc->next_state = _cs_read(d, CS_ELA_NEXTSTATE(ts));
-    tc->action = _cs_read(d, CS_ELA_ACTION(ts));
-    tc->alt_next_state = _cs_read(d, CS_ELA_ALTNEXTSTATE(ts));
-    tc->alt_action = _cs_read(d, CS_ELA_ALTACTION(ts));
+    tc->signal_group = _cs_read32(d, CS_ELA_SIGSEL(ts));
+    tc->trigger_control = _cs_read32(d, CS_ELA_TRIGCTRL(ts));
+    tc->next_state = _cs_read32(d, CS_ELA_NEXTSTATE(ts));
+    tc->action = _cs_read32(d, CS_ELA_ACTION(ts));
+    tc->alt_next_state = _cs_read32(d, CS_ELA_ALTNEXTSTATE(ts));
+    tc->alt_action = _cs_read32(d, CS_ELA_ALTACTION(ts));
     if (ela_has_atb(d)) {
-        tc->twbsel = _cs_read(d, CS_ELA_TWBSEL(ts));
+        tc->twbsel = _cs_read32(d, CS_ELA_TWBSEL(ts));
     }
-    tc->external_mask = _cs_read(d, CS_ELA_EXTMASK(ts));
-    tc->external_value = _cs_read(d, CS_ELA_EXTCOMP(ts));
-    tc->counter_compare = _cs_read(d, CS_ELA_COUNTCOMP(ts));
+    tc->external_mask = _cs_read32(d, CS_ELA_EXTMASK(ts));
+    tc->external_value = _cs_read32(d, CS_ELA_EXTCOMP(ts));
+    tc->counter_compare = _cs_read32(d, CS_ELA_COUNTCOMP(ts));
     if (ela_is_600(d)) {
-        tc->comp_control = _cs_read(d, CS_ELA_COMPCTRL(ts));
-        tc->alt_comp_control = _cs_read(d, CS_ELA_ALTCOMPCTRL(ts));
-        tc->qualifier_mask = _cs_read(d, CS_ELA_QUALMASK(ts));
-        tc->qualifier_value = _cs_read(d, CS_ELA_QUALCOMP(ts));
+        tc->comp_control = _cs_read32(d, CS_ELA_COMPCTRL(ts));
+        tc->alt_comp_control = _cs_read32(d, CS_ELA_ALTCOMPCTRL(ts));
+        tc->qualifier_mask = _cs_read32(d, CS_ELA_QUALMASK(ts));
+        tc->qualifier_value = _cs_read32(d, CS_ELA_QUALCOMP(ts));
     } else {
         /* If we read these undefined registers from ELA-500,
            we probably get zeroes anyway. But it's neater to test. */
@@ -289,21 +289,21 @@ int cs_ela_set_trigconf(cs_device_t dev, unsigned int ts, cs_ela_trigconf_t cons
     if (ts >= d->v.ela.n_trigger_states) {
         return -1;
     }
-    _cs_write(d, CS_ELA_SIGSEL(ts), tc->signal_group);
-    _cs_write(d, CS_ELA_TRIGCTRL(ts), tc->trigger_control);
+    _cs_write32(d, CS_ELA_SIGSEL(ts), tc->signal_group);
+    _cs_write32(d, CS_ELA_TRIGCTRL(ts), tc->trigger_control);
     assert(is_zero_one_hot(tc->next_state));
     if (!is_zero_one_hot(tc->next_state)) {
         return -1;
     }
-    _cs_write(d, CS_ELA_NEXTSTATE(ts), tc->next_state); /* 0 means don't change, final state */
-    _cs_write(d, CS_ELA_ACTION(ts), tc->action);
-    _cs_write(d, CS_ELA_ALTNEXTSTATE(ts), tc->alt_next_state);
-    _cs_write(d, CS_ELA_ALTACTION(ts), tc->alt_action);
+    _cs_write32(d, CS_ELA_NEXTSTATE(ts), tc->next_state); /* 0 means don't change, final state */
+    _cs_write32(d, CS_ELA_ACTION(ts), tc->action);
+    _cs_write32(d, CS_ELA_ALTNEXTSTATE(ts), tc->alt_next_state);
+    _cs_write32(d, CS_ELA_ALTACTION(ts), tc->alt_action);
     if (ela_is_600(d)) {
-        _cs_write(d, CS_ELA_COMPCTRL(ts), tc->comp_control);
-        _cs_write(d, CS_ELA_ALTCOMPCTRL(ts), tc->alt_comp_control);
-        _cs_write(d, CS_ELA_QUALMASK(ts), tc->qualifier_mask);
-        _cs_write(d, CS_ELA_QUALCOMP(ts), tc->qualifier_value);
+        _cs_write32(d, CS_ELA_COMPCTRL(ts), tc->comp_control);
+        _cs_write32(d, CS_ELA_ALTCOMPCTRL(ts), tc->alt_comp_control);
+        _cs_write32(d, CS_ELA_QUALMASK(ts), tc->qualifier_mask);
+        _cs_write32(d, CS_ELA_QUALCOMP(ts), tc->qualifier_value);
     } else {
         /* If we wrote the registers on ELA-500, they'd be ignored. */
         assert(tc->comp_control == 0);
@@ -316,11 +316,11 @@ int cs_ela_set_trigconf(cs_device_t dev, unsigned int ts, cs_ela_trigconf_t cons
         }
     }
     if (ela_has_atb(d)) {
-        _cs_write(d, CS_ELA_TWBSEL(ts), tc->twbsel);
+        _cs_write32(d, CS_ELA_TWBSEL(ts), tc->twbsel);
     }
-    _cs_write(d, CS_ELA_EXTMASK(ts), tc->external_mask);
-    _cs_write(d, CS_ELA_EXTCOMP(ts), tc->external_value);
-    _cs_write(d, CS_ELA_COUNTCOMP(ts), tc->counter_compare);
+    _cs_write32(d, CS_ELA_EXTMASK(ts), tc->external_mask);
+    _cs_write32(d, CS_ELA_EXTCOMP(ts), tc->external_value);
+    _cs_write32(d, CS_ELA_COUNTCOMP(ts), tc->counter_compare);
     write_regs(d, CS_ELA_SIGMASK(ts), d->v.ela.comp_width / 32, tc->compare_mask.v.words);
     write_regs(d, CS_ELA_SIGCOMP(ts), d->v.ela.comp_width / 32, tc->compare_value.v.words);
     return 0;
@@ -364,7 +364,7 @@ int cs_ela_reset_ram(cs_device_t dev)
         return -1;
     }
     /* "Write to the RWAR to set the first RAM address to be written and to clear the WRAP bit." */
-    _cs_write(d, CS_ELA_RWAR, 0x00000000);
+    _cs_write32(d, CS_ELA_RWAR, 0x00000000);
     return 0;
 }
 
@@ -379,7 +379,7 @@ int cs_ela_enable(cs_device_t dev)
         cs_ela_reset_ram(d);
     }
     /* Set the RUN bit. ELA should be active from this point on, no need to wait. */
-    return _cs_write(d, CS_ELA_CTRL, CS_ELA_CTRL_RUN);
+    return _cs_write32(d, CS_ELA_CTRL, CS_ELA_CTRL_RUN);
 }
 
 int cs_ela_disable(cs_device_t dev)
@@ -387,19 +387,19 @@ int cs_ela_disable(cs_device_t dev)
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_ELA);
     /* Unset the RUN bit, and then wait for BUSY to clear. */
-    _cs_write(d, CS_ELA_CTRL, 0);
-    return _cs_waitnot(d, CS_ELA_CTRL, CS_ELA_CTRL_TRACE_BUSY);
+    _cs_write32(d, CS_ELA_CTRL, 0);
+    return _cs_waitnot32(d, CS_ELA_CTRL, CS_ELA_CTRL_TRACE_BUSY);
 }
 
 int cs_ela_get_state(cs_device_t dev, cs_ela_state_t *st)
 {
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_ELA);
-    st->active = _cs_isset(d, CS_ELA_CTRL, CS_ELA_CTRL_RUN);
+    st->active = _cs_isset32(d, CS_ELA_CTRL, CS_ELA_CTRL_RUN);
     /* Reading CTSR samples the state and some other data. Can be done when RUN=1. */
-    st->trigger_state = _cs_read(d, CS_ELA_CTSR);
-    st->counter = _cs_read(d, CS_ELA_CCVR);
-    st->action = _cs_read(d, CS_ELA_CAVR);
+    st->trigger_state = _cs_read32(d, CS_ELA_CTSR);
+    st->counter = _cs_read32(d, CS_ELA_CCVR);
+    st->action = _cs_read32(d, CS_ELA_CAVR);
     return 0;
 }
 
@@ -410,14 +410,14 @@ int cs_ela_read_ram_entry(cs_device_t dev, cs_ela_record_t *rec)
     assert(d->type == DEV_ELA);
     /* "The first read of the RRD after an RRA update returns the trace data header byte value" */
     {
-        uint32_t const header = _cs_read(d, CS_ELA_RRDR);
+        uint32_t const header = _cs_read32(d, CS_ELA_RRDR);
         rec->raw_header = header;
         rec->type = header & 0x3;
         rec->trigger_state = (header >> 2) & 0x7;
     }
     /* All record types require RAM reads as if reading a signal group. */
     for (i = 0; i < d->v.ela.signal_width / 32; ++i) {
-        rec->signals.v.words[i] = _cs_read(d, CS_ELA_RRDR);
+        rec->signals.v.words[i] = _cs_read32(d, CS_ELA_RRDR);
     }
     rec->signals.n_bits = d->v.ela.signal_width;
     return 0;
@@ -448,7 +448,7 @@ int cs_ela_read_init(cs_device_t dev)
     assert(d->type == DEV_ELA);
     if (d->v.ela.ram_size != 0) {
         uint32_t ram_lo;
-        uint32_t rwa = _cs_read(d, CS_ELA_RWAR); /* get the current write pointer */
+        uint32_t rwa = _cs_read32(d, CS_ELA_RWAR); /* get the current write pointer */
         if (rwa & 0x80000000) {
             /* RAM has wrapped */
             ram_lo = rwa & 0x7fffffff;
@@ -463,7 +463,7 @@ int cs_ela_read_init(cs_device_t dev)
            transferred to the holding register, RRA increments by one.
            This prepares the RRA address for sequential RRDR reads."
            So we use an unchecked write (no read-back). */
-        _cs_write_wo(d, CS_ELA_RRAR, ram_lo);
+        _cs_write32_wo(d, CS_ELA_RRAR, ram_lo);
     }
     return n_entries;
 }

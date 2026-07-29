@@ -23,7 +23,7 @@
 uint32_t cs_debug_recv32(cs_device_t dev)
 {
     struct cs_device *d = DEV(dev);
-    return _cs_read(d, CS_DBGDTRTX);
+    return _cs_read32(d, CS_DBGDTRTX);
 }
 
 
@@ -36,7 +36,7 @@ uint64_t cs_debug_recv64(cs_device_t dev)
 int cs_debug_send32(cs_device_t dev, uint32_t data)
 {
     struct cs_device *d = DEV(dev);
-    return _cs_write_wo(d, CS_DBGDTRRX, data);
+    return _cs_write32_wo(d, CS_DBGDTRRX, data);
 }
 
 
@@ -44,9 +44,9 @@ int cs_debug_send64(cs_device_t dev, uint64_t data)
 {
     int rc;
     struct cs_device *d = DEV(dev);
-    rc = _cs_write_wo(d, CS_DBGDTRTX, (data >> 32));
+    rc = _cs_write32_wo(d, CS_DBGDTRTX, (data >> 32));
     if (!rc) {
-        rc = _cs_write_wo(d, CS_DBGDTRRX, (data & 0xffffffff));
+        rc = _cs_write32_wo(d, CS_DBGDTRRX, (data & 0xffffffff));
     }
     return rc;
 }
@@ -68,15 +68,15 @@ int cs_debug_halt(cs_device_t dev, unsigned int flags)
     if (flags & CS_DEBUG_CANCEL_BUS_REQUESTS) {
         req |= CS_DBGDRCR_CBRRQ;
     }
-    _cs_write_wo(d, CS_DBGDRCR, req);
+    _cs_write32_wo(d, CS_DBGDRCR, req);
     /* Wait until halted - n.b. on v7.1 could test DBGPRSR_HALTED */
-    rc = _cs_wait(d, CS_DBGDSCR, CS_DBGDSCR_HALTED);
+    rc = _cs_wait32(d, CS_DBGDSCR, CS_DBGDSCR_HALTED);
     if (rc) {
         return rc;
     }
     /* The CPU is left unlocked on the assumption we'll be injecting
        instructions via DBGITR etc. */
-    _cs_set(d, CS_DBGDSCR, CS_DBGDSCR_ITRen);
+    _cs_set32(d, CS_DBGDSCR, CS_DBGDSCR_ITRen);
     return 0;
 }
 
@@ -88,10 +88,10 @@ int cs_debug_is_halted(cs_device_t dev, cs_debug_moe_t *reason)
     assert(d->type == DEV_CPU_DEBUG);
     assert(!IS_V8(d));
 
-    flag = _cs_isset(d, CS_DBGDSCR, CS_DBGDSCR_HALTED);
+    flag = _cs_isset32(d, CS_DBGDSCR, CS_DBGDSCR_HALTED);
     if (flag && reason != NULL) {
         /* Read the MOE field */
-        *reason = (cs_debug_moe_t)((_cs_read(d, CS_DBGDSCR) >> 2) & 0xF);
+        *reason = (cs_debug_moe_t)((_cs_read32(d, CS_DBGDSCR) >> 2) & 0xF);
     }
     return flag;
 }
@@ -112,11 +112,11 @@ int cs_debug_cpu_is_active(cs_device_t dev)
        the other core enough time that if "running", some instructions would
        in fact be advanced - we don't want to falsely report it's stuck just
        because it's stalled on a memory access or floating-point divide. */
-    _cs_write_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSPA);
+    _cs_write32_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSPA);
     /* Poll the bit a few times - this raises the success rate for an active
        CPU from about 80% to nearly 100%. */
     for (i = 0; i < 5; ++i) {
-        is_active = _cs_isset(d, CS_DBGDSCR, CS_DBGDSCR_PipeAdv);
+        is_active = _cs_isset32(d, CS_DBGDSCR, CS_DBGDSCR_PipeAdv);
         if (is_active)
             break;
     }
@@ -138,12 +138,12 @@ static int _cs_debug_exec(struct cs_device *d, unsigned int inst)
 {
     /* Write the instruction to the ITR.  Use of the ITR is assumed to
        have already been enabled, e.g. by cs_debug_halt. */
-    assert(_cs_isset(d, CS_DBGDSCR, CS_DBGDSCR_ITRen));
+    assert(_cs_isset32(d, CS_DBGDSCR, CS_DBGDSCR_ITRen));
     assert(!IS_V8(d));
 
-    _cs_write_wo(d, CS_DBGITR, inst);
+    _cs_write32_wo(d, CS_DBGITR, inst);
     /* Wait for the architectural effect to complete. */
-    return _cs_wait(d, CS_DBGDSCR, CS_DBGDSCR_InstrCompl_l);
+    return _cs_wait32(d, CS_DBGDSCR, CS_DBGDSCR_InstrCompl_l);
 }
 
 
@@ -178,9 +178,9 @@ static int cs_debug_exec_and_read(struct cs_device *d, unsigned int inst,
     }
     /* Now, either the value should be available in the transfer register,
        or the instruction should have failed.  We should not have to poll TXfull. */
-    dscr = _cs_read(d, CS_DBGDSCR);
+    dscr = _cs_read32(d, CS_DBGDSCR);
     if (dscr & CS_DBGDSCR_TXfull) {
-        value = _cs_read(d, CS_DBGDTRTX);
+        value = _cs_read32(d, CS_DBGDTRTX);
         if (pvalue) {
             *pvalue = value;
         }
@@ -202,8 +202,8 @@ static int cs_debug_exec_and_read(struct cs_device *d, unsigned int inst,
 static int cs_debug_write_and_exec(struct cs_device *d, unsigned int value,
                                    unsigned int inst)
 {
-    _cs_write_wo(d, CS_DBGDTRRX, value);
-    _cs_wait(d, CS_DBGDSCR, CS_DBGDSCR_RXfull);
+    _cs_write32_wo(d, CS_DBGDTRRX, value);
+    _cs_wait32(d, CS_DBGDSCR, CS_DBGDSCR_RXfull);
     return _cs_debug_exec(d, inst);
 }
 
@@ -264,7 +264,7 @@ int cs_debug_read_registers(cs_device_t dev, unsigned int mask,
     assert(d->type == DEV_CPU_DEBUG);
     assert(!IS_V8(d));
 
-    dscr = _cs_read(d, CS_DBGDSCR);
+    dscr = _cs_read32(d, CS_DBGDSCR);
     if ((dscr & 0x00300000) != 0) {
         /* External DCC access mode is not non-blocking */
         return -1;
@@ -315,7 +315,7 @@ int cs_debug_read_memory(cs_device_t dev, cs_virtaddr_t addr, void *data,
     rc = cs_debug_read_register(d, R0, &save_r0);
     if (!rc) {
         /* Clear the sticky data abort bits */
-        _cs_write_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSE);
+        _cs_write32_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSE);
         /* Preserve the fault registers in case we overwrite them */
         cs_debug_read_cp15(d, CP15_DFAR, &save_dfar, R0);
         cs_debug_read_cp15(d, CP15_DFSR, &save_dfsr, R0);
@@ -330,7 +330,7 @@ int cs_debug_read_memory(cs_device_t dev, cs_virtaddr_t addr, void *data,
                 if (rc == CS_DEBUG_READ_DATA_ABORT) {
                     unsigned int dfar, dfsr;
                     /* Clear the sticky abort bits, otherwise we'll keep failing to read */
-                    _cs_write_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSE);
+                    _cs_write32_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSE);
                     cs_debug_read_cp15(d, CP15_DFAR, &dfar, R0);
                     cs_debug_read_cp15(d, CP15_DFSR, &dfsr, R0);
                     fprintf(stderr,
@@ -375,8 +375,8 @@ int cs_debug_restart(cs_device_t dev)
     _cs_unlock(d);
     /* "When the processor is in Debug state, it can exit Debug state by
        performing a single write to DBGDRCR with DBGDRCR.{CSE,RRQ} == 0b11." */
-    _cs_write_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSE | CS_DBGDRCR_RRQ);
-    rc = _cs_wait(d, CS_DBGDSCR, CS_DBGDSCR_RESTARTED);
+    _cs_write32_wo(d, CS_DBGDRCR, CS_DBGDRCR_CSE | CS_DBGDRCR_RRQ);
+    rc = _cs_wait32(d, CS_DBGDSCR, CS_DBGDSCR_RESTARTED);
     /* At this point either
        - the processor has exited Debug state (HALTED=0)
        - the processor has exited and re-entered Debug state (HALTED=1) */

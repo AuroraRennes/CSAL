@@ -29,7 +29,7 @@ int cs_sink_is_enabled(cs_device_t dev)
     struct cs_device *d = DEV(dev);
     assert(cs_device_has_class(dev, CS_DEVCLASS_SINK));
     if (d->type == DEV_ETB || d->type == DEV_ETF) {
-        return _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+        return _cs_isset32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
     } else {
         return 0;
     }
@@ -45,7 +45,7 @@ int cs_sink_enable(cs_device_t dev)
     if (d->type == DEV_ETB || d->type == DEV_ETF) {
         unsigned int flfmt;
         d->v.etb.currently_reading = 0;
-        if (_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+        if (_cs_isset32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
             return 0;
         }
         /* "The RAM Write Pointer Register must be programmed before trace
@@ -67,8 +67,8 @@ int cs_sink_enable(cs_device_t dev)
                then read the data, then disable for reprogramming. */
             flfmt |= CS_ETB_FLFMT_CTRL_StopFl;
         }
-        _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
-        return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+        _cs_set32(d, CS_ETB_FLFMT_CTRL, flfmt);
+        return _cs_write32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
     } else {
         /* The only other sinks would be trace ports, and currently this
            library doesn't support use cases which have an external
@@ -88,12 +88,12 @@ int cs_sink_disable(cs_device_t dev)
     _cs_unlock(d);
     if (d->type == DEV_TPIU) {
         /* TPIU */
-        _cs_set(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_StopFl); /* Stop flush */
+        _cs_set32(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_StopFl); /* Stop flush */
         /* When we request a flush via FOnMan, the FOnMan reads back as 1 while the
            flush is in progress, then goes to 0.  So don't try to read back. */
-        _cs_set_wo(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_FOnMan);
+        _cs_set32_wo(d, CS_TPIU_FLFMT_CTRL, CS_TPIU_FLFMT_CTRL_FOnMan);
         /* This is the indicator that the flush sequence has completed. */
-        return _cs_wait(d, CS_TPIU_FLFMT_STATUS,
+        return _cs_wait32(d, CS_TPIU_FLFMT_STATUS,
                         CS_TPIU_FLFMT_STATUS_FtStopped);
     } else if (d->type == DEV_SWO) {
         /* SWO */
@@ -102,29 +102,29 @@ int cs_sink_disable(cs_device_t dev)
     } else if (d->type == DEV_ETB || d->type == DEV_ETF) {
         /* ETB or TMC */
         if (d->v.etb.is_tmc_device &&
-            _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+            _cs_isset32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
             /* Manual Flush to go via Stopping to Stopped */
-            _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+            _cs_set32_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
             /* Now in Stopping */
             /* [TMC 2.2.2] "6. Wait until TMCReady is equal to one.  This indicates
                that the trace session is over." */
-            _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+            _cs_wait32(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
             /* Now in Stopped. */
             /* The TMC is still enabled, i.e. TraceCaptEn is set.
                It will be disabled when we complete read-out. */
             return 0;
         }
         /* "Disable trace capture" by unsetting TraceCaptEn */
-        rc = _cs_write(d, CS_ETB_CTRL, 0x0);
+        rc = _cs_write32(d, CS_ETB_CTRL, 0x0);
         if (rc)
             return rc;
         /* Wait for formatter to flush */
-        rc = _cs_wait(d, CS_ETB_STATUS, CS_ETB_STATUS_FtEmpty);
+        rc = _cs_wait32(d, CS_ETB_STATUS, CS_ETB_STATUS_FtEmpty);
         if (rc)
             return rc;
         /* After FtEmpty: "Formatter pipeline is empty. All data is stored to RAM." */
         /* "Capture is fully disabled, or complete, when FtStopped goes high" */
-        rc = _cs_wait(d, CS_ETB_FLFMT_STATUS,
+        rc = _cs_wait32(d, CS_ETB_FLFMT_STATUS,
                       CS_ETB_FLFMT_STATUS_FtStopped);
         return rc;
     } else {
@@ -163,7 +163,7 @@ int cs_set_buffer_trigger_counter(cs_device_t dev, unsigned int bytes)
     assert((int)bytes <= cs_get_buffer_size_bytes(dev));
     _cs_unlock(d);
     /* For TMCs this is defined as a count of 32-bit words.  For CoreSight ETBs it's the same. */
-    return _cs_write(d, CS_ETB_TRIGGER_COUNT,
+    return _cs_write32(d, CS_ETB_TRIGGER_COUNT,
                      bytes >> (d->v.etb.is_tmc_device ? 2 : ETB_WIDTH_SCALE_SHIFT));
 }
 
@@ -175,7 +175,7 @@ int cs_buffer_has_wrapped(cs_device_t dev)
 {
     struct cs_device *d = DEV(dev);
     assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER));
-    return _cs_isset(d, CS_ETB_STATUS, CS_ETB_STATUS_Full);
+    return _cs_isset32(d, CS_ETB_STATUS, CS_ETB_STATUS_Full);
 }
 
 
@@ -196,8 +196,8 @@ int cs_get_buffer_unread_bytes(cs_device_t dev)
     } else {
         /* Either the trace never wrapped, or we're in the middle of reading */
         unsigned int const shift = d->v.etb.pointer_scale_shift;
-        unsigned int rdptr = _cs_read(d, CS_ETB_RAM_RD_PTR);
-        unsigned int wrptr = _cs_read(d, CS_ETB_RAM_WR_PTR);
+        unsigned int rdptr = _cs_read32(d, CS_ETB_RAM_RD_PTR);
+        unsigned int wrptr = _cs_read32(d, CS_ETB_RAM_WR_PTR);
         if (rdptr <= wrptr) {
             unread = (wrptr - rdptr) << shift;
         } else {
@@ -234,14 +234,14 @@ int cs_get_trace_data(cs_device_t dev, void *buf, unsigned int size)
     if (!d->v.etb.currently_reading && cs_buffer_has_wrapped(dev)) {
         /* When the buffer has wrapped, the best we can do is start reading
            from the last unwritten byte... */
-        _cs_write(d, CS_ETB_RAM_RD_PTR, _cs_read(d, CS_ETB_RAM_WR_PTR));
+        _cs_write32(d, CS_ETB_RAM_RD_PTR, _cs_read32(d, CS_ETB_RAM_WR_PTR));
         unread = cs_get_buffer_size_bytes(dev);
     } else {
         unread = cs_get_buffer_unread_bytes(dev);
         /* We now need to write the RAM read pointer in order to trigger a
            RAM access cycle and load the data into the RAM read register. */
-        if (_cs_read(d, CS_ETB_RAM_RD_PTR) == 0) {
-            _cs_write(d, CS_ETB_RAM_RD_PTR, 0);
+        if (_cs_read32(d, CS_ETB_RAM_RD_PTR) == 0) {
+            _cs_write32(d, CS_ETB_RAM_RD_PTR, 0);
         }
     }
     d->v.etb.currently_reading = 1;
@@ -250,9 +250,9 @@ int cs_get_trace_data(cs_device_t dev, void *buf, unsigned int size)
     op = (unsigned int *)buf;
     if (DTRACE(d)) {
         diagf("!ctrl=%08X status=%08X flstatus=%08X readptr=%08X writeptr=%08X unread=%04X\n",
-              _cs_read(d, CS_ETB_CTRL), _cs_read(d, CS_ETB_STATUS),
-              _cs_read(d, CS_ETB_FLFMT_STATUS), _cs_read(d, CS_ETB_RAM_RD_PTR),
-              _cs_read(d, CS_ETB_RAM_WR_PTR), unread);
+              _cs_read32(d, CS_ETB_CTRL), _cs_read32(d, CS_ETB_STATUS),
+              _cs_read32(d, CS_ETB_FLFMT_STATUS), _cs_read32(d, CS_ETB_RAM_RD_PTR),
+              _cs_read32(d, CS_ETB_RAM_WR_PTR), unread);
     }
 
     /* Work out a total amount to read in this call.
@@ -286,19 +286,19 @@ int cs_get_trace_data(cs_device_t dev, void *buf, unsigned int size)
 
     /* As an optimization, to speed up the read loop below, we attempt to get the
        local address of the ETB's data transfer register. This might not be possible. */
-    etb_read_reg = _cs_get_register_address(d, CS_ETB_RAM_DATA);
+    etb_read_reg = _cs_get_register_address32(d, CS_ETB_RAM_DATA);
     if (0) {
         fprintf(stderr,
                 "TraceCaptEn=%u TMCReady=%u Empty=%u CBUFLEVEL=0x%" PRIx32 "\n",
-                _cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn),
-                _cs_isset(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady),
-                _cs_isset(d, CS_ETB_STATUS, CS_TMC_STATUS_Empty),
-                _cs_read(d, CS_TMC_CBUFLEVEL));
+                _cs_isset32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn),
+                _cs_isset32(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady),
+                _cs_isset32(d, CS_ETB_STATUS, CS_TMC_STATUS_Empty),
+                _cs_read32(d, CS_TMC_CBUFLEVEL));
     }
     while (words_left_to_read > 0) {
-        uint32_t data = etb_read_reg ? *etb_read_reg : _cs_read(d, CS_ETB_RAM_DATA);
+        uint32_t data = etb_read_reg ? *etb_read_reg : _cs_read32(d, CS_ETB_RAM_DATA);
         if (0) {
-            printf("read %08x, read ptr now %08x\n", data, _cs_read(d, CS_ETB_RAM_RD_PTR));
+            printf("read %08x, read ptr now %08x\n", data, _cs_read32(d, CS_ETB_RAM_RD_PTR));
         }
         if (data != 0xFFFFFFFF) {
             *op++ = data;
@@ -311,7 +311,7 @@ int cs_get_trace_data(cs_device_t dev, void *buf, unsigned int size)
             */
             if (DTRACE(d)) {
                 diagf("  read all 1s (%08X): readptr=%08X\n", data,
-                      _cs_read(d, CS_ETB_RAM_RD_PTR));
+                      _cs_read32(d, CS_ETB_RAM_RD_PTR));
             }
             *op++ = data; /* Write the 0xFFFFFFFF to the output buffer. */
         }
@@ -326,13 +326,13 @@ int cs_get_trace_data(cs_device_t dev, void *buf, unsigned int size)
         if (d->v.etb.is_tmc_device) {
             /* The TMC spec says that once we've read all the data in the buffer,
                subsequent reads will read 0xFFFFFFFF. */
-            uint32_t checkff = etb_read_reg ? *etb_read_reg : _cs_read(d, CS_ETB_RAM_DATA);
+            uint32_t checkff = etb_read_reg ? *etb_read_reg : _cs_read32(d, CS_ETB_RAM_DATA);
             if (checkff != 0xFFFFFFFF) {
                 diagf("  TMC ETB read 0x%08X, expected 0xFFFFFFFF\n",
                       checkff);
             }
             /* Now we can move from Stopped to Disabled. */
-            _cs_clear(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+            _cs_clear32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
         }
     }
     return bytes_read;
@@ -355,12 +355,12 @@ int cs_empty_trace_buffer(cs_device_t dev)
 
     /* The buffer must not currently be capturing. */
     if (!d->v.etb.is_tmc_device) {
-        assert(!_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn));
+        assert(!_cs_isset32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn));
     } else {
         /* TMC might be in Stopped state - if so, disable it. */
-        if (_cs_isset(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
-            assert(_cs_isset(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady));
-            _cs_clear(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+        if (_cs_isset32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn)) {
+            assert(_cs_isset32(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady));
+            _cs_clear32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
         }
     }
 
@@ -374,39 +374,39 @@ int cs_empty_trace_buffer(cs_device_t dev)
         /* We've observed that when StopTrig is enabled, the action of briefly
            enabling trace doesn't result in the Full (wrapped) indicator being reset.
            So, temporarily disable StopTrig. */
-        unsigned int flc = _cs_read(d, CS_ETB_FLFMT_CTRL);
+        unsigned int flc = _cs_read32(d, CS_ETB_FLFMT_CTRL);
         if (flc & (CS_ETB_FLFMT_CTRL_StopTrig | CS_ETB_FLFMT_CTRL_StopFl)) {
-            _cs_write(d, CS_ETB_FLFMT_CTRL,
+            _cs_write32(d, CS_ETB_FLFMT_CTRL,
                       flc & ~(CS_ETB_FLFMT_CTRL_StopTrig |
                               CS_ETB_FLFMT_CTRL_StopFl));
         }
         do {
             ++retries;
             if (retries > 3) {
-                unsigned int status = _cs_read(d, CS_ETB_STATUS);
-                unsigned int flstat = _cs_read(d, CS_ETB_FLFMT_STATUS);
+                unsigned int status = _cs_read32(d, CS_ETB_STATUS);
+                unsigned int flstat = _cs_read32(d, CS_ETB_FLFMT_STATUS);
                 return cs_report_device_error(d,
                                               "can't reset the wrapped flag, status=%08X, fl.status=%08X",
                                               status, flstat);
             }
             /* Set the write pointer to the start as we don't want to wrap again */
-            _cs_write(d, CS_ETB_RAM_WR_PTR, 0x00000000);
-            _cs_set(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+            _cs_write32(d, CS_ETB_RAM_WR_PTR, 0x00000000);
+            _cs_set32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
             /* We're now capturing trace, hopefully briefly. */
-            _cs_clear(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+            _cs_clear32(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
             /* We may have moved the write pointer a little bit.  We'd be very
                unlucky to have wrapped again, unless we were suspended while
                the trace was enabled. */
         } while (cs_buffer_has_wrapped(dev));
         if (flc & CS_ETB_FLFMT_CTRL_StopTrig) {
-            _cs_write(d, CS_ETB_FLFMT_CTRL, flc);
+            _cs_write32(d, CS_ETB_FLFMT_CTRL, flc);
         }
     }
-    _cs_write(d, CS_ETB_RAM_WR_PTR, 0x00000000);
+    _cs_write32(d, CS_ETB_RAM_WR_PTR, 0x00000000);
     /* We might as well program the read pointer here as an indicator that
        we aren't part-way through a buffer read.  But when we do read out,
        we need to write the read pointer again to trigger a RAM access. */
-    rc = _cs_write(d, CS_ETB_RAM_RD_PTR, 0x00000000);
+    rc = _cs_write32(d, CS_ETB_RAM_RD_PTR, 0x00000000);
     assert(cs_get_buffer_unread_bytes(dev) == 0);
     /* Buffer is empty so we're not reading anything. */
     d->v.etb.finished_reading = 0;
@@ -422,16 +422,16 @@ int cs_clear_trace_buffer(cs_device_t dev, unsigned int data)
 
     assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER));
     _cs_unlock(d);
-    rc = _cs_write(d, CS_ETB_RAM_WR_PTR, 0);
+    rc = _cs_write32(d, CS_ETB_RAM_WR_PTR, 0);
     if (rc != 0) {
         return rc;
     }
     size_words = d->v.etb.buffer_size_bytes >> 2;
     for (i = 0; i < size_words; ++i) {
-        _cs_write(d, CS_ETB_RAM_WRITE_DATA, data);
+        _cs_write32(d, CS_ETB_RAM_WRITE_DATA, data);
     }
     /* The write-pointer should have wrapped */
-    assert(_cs_read(d, CS_ETB_RAM_WR_PTR) == 0);
+    assert(_cs_read32(d, CS_ETB_RAM_WR_PTR) == 0);
     /* Now reset the counters so that the buffer appears as empty. */
     return cs_empty_trace_buffer(dev);
 }
@@ -451,19 +451,19 @@ int cs_insert_trace_data(cs_device_t dev, void const *buf,
     _cs_unlock(d);
     if (DTRACE(d)) {
         diagf("  ctrl=%08X status=%08X flstatus=%08X writeptr=%08X\n",
-              _cs_read(d, CS_ETB_CTRL),
-              _cs_read(d, CS_ETB_STATUS),
-              _cs_read(d, CS_ETB_FLFMT_STATUS),
-              _cs_read(d, CS_ETB_RAM_WR_PTR));
+              _cs_read32(d, CS_ETB_CTRL),
+              _cs_read32(d, CS_ETB_STATUS),
+              _cs_read32(d, CS_ETB_FLFMT_STATUS),
+              _cs_read32(d, CS_ETB_RAM_WR_PTR));
     }
-    optr = _cs_read(d, CS_ETB_RAM_WR_PTR);
+    optr = _cs_read32(d, CS_ETB_RAM_WR_PTR);
     while (size > 0) {
         unsigned int data = *ip++;
-        _cs_write(d, CS_ETB_RAM_WRITE_DATA, data);
+        _cs_write32(d, CS_ETB_RAM_WRITE_DATA, data);
         size -= 4;
         /* As a diagnostic check, check that the write-pointer has incremented */
         if (0) {
-            nptr = _cs_read(d, CS_ETB_RAM_WR_PTR);
+            nptr = _cs_read32(d, CS_ETB_RAM_WR_PTR);
             if (optr == nptr) {
                 return cs_report_device_error(d,
                                               "failed to increment write-pointer");

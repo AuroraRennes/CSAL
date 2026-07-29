@@ -36,10 +36,10 @@ static int cs_memap_set_access_size_bytes(struct cs_device *d, unsigned int size
     }
 
     csw_size = size == 8 ? CS_MEMAP_CSW_SIZE_64 : CS_MEMAP_CSW_SIZE_32;
-    csw = _cs_read(d, CS_MEMAP_CSW);
+    csw = _cs_read32(d, CS_MEMAP_CSW);
     ncsw = (csw & ~CS_MEMAP_CSW_SIZE_MASK) | csw_size;
     if (ncsw != csw) {
-        int rc = _cs_write(d, CS_MEMAP_CSW, ncsw);
+        int rc = _cs_write32(d, CS_MEMAP_CSW, ncsw);
         if (rc) {
             d->v.memap.access_size_valid = 0;
             return rc;
@@ -84,7 +84,7 @@ static int cs_memap_set_security_state_raw(struct cs_device *d, cs_security_t st
         return 0;
     }
 
-    csw = _cs_read(d, CS_MEMAP_CSW);
+    csw = _cs_read32(d, CS_MEMAP_CSW);
     ncsw = csw & ~mask;
     if (state & 1) {
         ncsw |= CS_MEMAP_CSW_PROT_NS;
@@ -93,7 +93,7 @@ static int cs_memap_set_security_state_raw(struct cs_device *d, cs_security_t st
         ncsw |= CS_MEMAP_CSW_NSE;
     }
     if (ncsw != csw) {
-        int rc = _cs_write(d, CS_MEMAP_CSW, ncsw);
+        int rc = _cs_write32(d, CS_MEMAP_CSW, ncsw);
         if (rc) {
             d->v.memap.security_state_valid = 0;
             return rc;
@@ -175,7 +175,7 @@ uint32_t cs_memap_read32(cs_device_t dev, cs_physaddr_t addr)
     if (cs_memap_prepare(d, addr, 4, &reg)) {
         return 0;
     }
-    return _cs_read(d, reg);
+    return _cs_read32(d, reg);
 }
 
 
@@ -206,7 +206,7 @@ int cs_memap_write32(cs_device_t dev, cs_physaddr_t addr, uint32_t data)
     if (cs_memap_prepare(d, addr, 4, &reg)) {
         return -1;
     }
-    return _cs_write(d, reg, data);
+    return _cs_write32(d, reg, data);
 }
 
 
@@ -235,10 +235,10 @@ int cs_memap_write64(cs_device_t dev, cs_physaddr_t addr, uint64_t data)
 cs_physaddr_t cs_memap_read_TAR(cs_device_t dev)
 {
     struct cs_device *d = DEV(dev);
-    cs_physaddr_t tar = _cs_read(d, CS_MEMAP_TAR);
+    cs_physaddr_t tar = _cs_read32(d, CS_MEMAP_TAR);
 #ifdef LPAE
     if (d->v.memap.memap_LPAE) {
-        tar |= (((cs_physaddr_t)_cs_read(d, CS_MEMAP_TARHI)) << 32);
+        tar |= (((cs_physaddr_t)_cs_read32(d, CS_MEMAP_TARHI)) << 32);
     }
 #endif
     return tar;
@@ -252,13 +252,13 @@ int cs_memap_write_TAR(cs_device_t dev, cs_physaddr_t addr)
 {
     int rc;
     struct cs_device *d = DEV(dev);
-    rc = _cs_write(d, CS_MEMAP_TAR, addr);
+    rc = _cs_write32(d, CS_MEMAP_TAR, addr);
     if (rc) {
         return rc;
     }
 #ifdef LPAE
     if (d->v.memap.memap_LPAE) {
-        rc = _cs_write(d, CS_MEMAP_TARHI, (addr >> 32));
+        rc = _cs_write32(d, CS_MEMAP_TARHI, (addr >> 32));
         if (rc) {
             d->v.memap.TAR_valid = 0;
             return rc;
@@ -277,10 +277,10 @@ int cs_memap_write_TAR(cs_device_t dev, cs_physaddr_t addr)
 int cs_memap_check_error(cs_device_t dev, int reset)
 {
     struct cs_device *d = DEV(dev);
-    uint32_t trr = _cs_read(d, CS_MEMAP_TRR);
+    uint32_t trr = _cs_read32(d, CS_MEMAP_TRR);
     int error_logged = (trr & CS_MEMAP_TRR_ERR);
     if (reset && error_logged) {
-        _cs_write(d, CS_MEMAP_TRR, CS_MEMAP_TRR_ERR); /* write the flag to clear it */
+        _cs_write32(d, CS_MEMAP_TRR, CS_MEMAP_TRR_ERR); /* write the flag to clear it */
     }
     return error_logged;
 }

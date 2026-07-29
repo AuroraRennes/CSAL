@@ -20,14 +20,22 @@
 #include "cs_reg_access.h"
 
 
+uint32_t cs_device_read32(cs_device_t dev, unsigned int off)
+{
+    return _cs_read32(DEV(dev), off);
+}
+
+#if CSAL_LEGACY32
 uint32_t cs_device_read(cs_device_t dev, unsigned int off)
 {
-    return _cs_read(DEV(dev), off);
+    return cs_device_read32(dev, off);
 }
+#endif
 
 uint64_t cs_device_read32x2(cs_device_t dev, unsigned int hioff, unsigned int looff)
 {
-    return ((uint64_t)cs_device_read(dev, hioff) << 32) | cs_device_read(dev, looff);
+    return ((uint64_t)cs_device_read32(dev, hioff) << 32) |
+           cs_device_read32(dev, looff);
 }
 
 uint64_t cs_device_read64(cs_device_t dev, unsigned int off)
@@ -35,12 +43,19 @@ uint64_t cs_device_read64(cs_device_t dev, unsigned int off)
     return _cs_read64(DEV(dev), off);
 }
 
-int cs_device_write(cs_device_t dev, unsigned int off, uint32_t data)
+int cs_device_write32(cs_device_t dev, unsigned int off, uint32_t data)
 {
     /* Unlock the device if it is locked */
     _cs_unlock(DEV(dev));
-    return _cs_write(DEV(dev), off, data);
+    return _cs_write32(DEV(dev), off, data);
 }
+
+#if CSAL_LEGACY32
+int cs_device_write(cs_device_t dev, unsigned int off, uint32_t data)
+{
+    return cs_device_write32(dev, off, data);
+}
+#endif
 
 int cs_device_write64(cs_device_t dev, unsigned int off, uint64_t data)
 {
@@ -48,44 +63,83 @@ int cs_device_write64(cs_device_t dev, unsigned int off, uint64_t data)
     return _cs_write64(DEV(dev), off, data);
 }
 
-int cs_device_write_only(cs_device_t dev, unsigned int off, uint32_t data)
+int cs_device_write32_only(cs_device_t dev, unsigned int off, uint32_t data)
 {
     /* Unlock the device if it is locked */
     _cs_unlock(DEV(dev));
-    return _cs_write_wo(DEV(dev), off, data);
+    return _cs_write32_wo(DEV(dev), off, data);
 }
 
+#if CSAL_LEGACY32
+int cs_device_write_only(cs_device_t dev, unsigned int off, uint32_t data)
+{
+    return cs_device_write32_only(dev, off, data);
+}
+#endif
+
+int cs_device_write32_masked(cs_device_t dev, unsigned int offset,
+                             uint32_t data, uint32_t bitmask)
+{
+    /* Unlock the device if it is locked */
+    _cs_unlock(DEV(dev));
+    return _cs_write32_mask(DEV(dev), offset, bitmask, data);
+}
+
+#if CSAL_LEGACY32
 int cs_device_write_masked(cs_device_t dev, unsigned int offset,
                            uint32_t data, uint32_t bitmask)
 {
-    /* Unlock the device if it is locked */
+    return cs_device_write32_masked(dev, offset, data, bitmask);
+}
+#endif
+
+
+int cs_device_set32(cs_device_t dev, unsigned int off, uint32_t bits)
+{
     _cs_unlock(DEV(dev));
-    return _cs_write_mask(DEV(dev), offset, bitmask, data);
+    return _cs_set32(DEV(dev), off, bits);
 }
 
-
+#if CSAL_LEGACY32
 int cs_device_set(cs_device_t dev, unsigned int off, uint32_t bits)
 {
-    _cs_unlock(DEV(dev));
-    return _cs_set(DEV(dev), off, bits);
+    return cs_device_set32(dev, off, bits);
 }
+#endif
 
-int cs_device_clear(cs_device_t dev, unsigned int off, uint32_t bits)
+int cs_device_clear32(cs_device_t dev, unsigned int off, uint32_t bits)
 {
     _cs_unlock(DEV(dev));
-    return _cs_clear(DEV(dev), off, bits);
+    return _cs_clear32(DEV(dev), off, bits);
 }
 
-int cs_device_wait(cs_device_t dev, unsigned int offset,
-                   uint32_t bit_mask, cs_reg_waitbits_op_t operation,
-                   uint32_t pattern, uint32_t *p_last_val)
+#if CSAL_LEGACY32
+int cs_device_clear(cs_device_t dev, unsigned int off, uint32_t bits)
+{
+    return cs_device_clear32(dev, off, bits);
+}
+#endif
+
+int cs_device_wait32(cs_device_t dev, unsigned int offset,
+                     uint32_t bit_mask, cs_reg_waitbits_op_t operation,
+                     uint32_t pattern, uint32_t *p_last_val)
 {
     assert((operation >= CS_REG_WAITBITS_ALL_1) && (operation < CS_REG_WAITBITS_END));
     _cs_unlock(DEV(dev));
 
-    return _cs_waitbits(DEV(dev), offset, bit_mask, operation, pattern,
-                        p_last_val);
+    return _cs_waitbits32(DEV(dev), offset, bit_mask, operation, pattern,
+                          p_last_val);
 }
+
+#if CSAL_LEGACY32
+int cs_device_wait(cs_device_t dev, unsigned int offset,
+                   uint32_t bit_mask, cs_reg_waitbits_op_t operation,
+                   uint32_t pattern, uint32_t *p_last_val)
+{
+    return cs_device_wait32(dev, offset, bit_mask, operation, pattern,
+                            p_last_val);
+}
+#endif
 
 void cs_device_set_wait_repeats(int n_wait_repeat_count)
 {

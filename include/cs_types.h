@@ -23,6 +23,24 @@ extern "C" {
 #ifndef _included_cs_types_h
 #define _included_cs_types_h
 
+/* Define as 0 to omit the legacy unsuffixed 32-bit register access API. */
+#ifndef CSAL_LEGACY32
+#define CSAL_LEGACY32 1
+#endif
+
+/* Define as 1 to warn when the legacy 32-bit register access API is used. */
+#ifndef CSAL_WARN_DEPRECATED
+#define CSAL_WARN_DEPRECATED 0
+#endif
+
+#ifndef CSAL_DEPRECATED
+#if CSAL_WARN_DEPRECATED && (defined(__GNUC__) || defined(__clang__))
+#define CSAL_DEPRECATED(message) __attribute__((deprecated(message)))
+#else
+#define CSAL_DEPRECATED(message)
+#endif
+#endif
+
 #if defined(__KERNEL__) || defined(MODULE)
 #define UNIX_KERNEL 1 /**< defined if running in kernel (currently experimental) */
 #endif                /* __KERNELi__ */
@@ -178,13 +196,13 @@ typedef enum {
 } cs_devtype_t;
 
 
-/** Enum type defining the bit operations for the cs_device_wait() function */
+/** Enum type defining the bit operations for the cs_device_wait32() function */
 typedef enum {
-    CS_REG_WAITBITS_ALL_1 = 1, /**< operation value for cs_device_wait() : wait for all bits in mask to go high */
-    CS_REG_WAITBITS_ANY_1,     /**< operation value for cs_device_wait() : wait for any bit in mask to go high  */
-    CS_REG_WAITBITS_ALL_0,     /**< operation value for cs_device_wait() : wait for all bits in mask to go low */
-    CS_REG_WAITBITS_ANY_0,     /**< operation value for cs_device_wait() : wait for any bit in mask to go low  */
-    CS_REG_WAITBITS_PTTRN,     /**< operation value for cs_device_wait() : wait for bits to match pattern (both high and low bits) */
+    CS_REG_WAITBITS_ALL_1 = 1, /**< operation value for cs_device_wait32() : wait for all bits in mask to go high */
+    CS_REG_WAITBITS_ANY_1,     /**< operation value for cs_device_wait32() : wait for any bit in mask to go high  */
+    CS_REG_WAITBITS_ALL_0,     /**< operation value for cs_device_wait32() : wait for all bits in mask to go low */
+    CS_REG_WAITBITS_ANY_0,     /**< operation value for cs_device_wait32() : wait for any bit in mask to go low  */
+    CS_REG_WAITBITS_PTTRN,     /**< operation value for cs_device_wait32() : wait for bits to match pattern (both high and low bits) */
     CS_REG_WAITBITS_END        /**< End marker. Not a valid operation. */
 } cs_reg_waitbits_op_t;
 

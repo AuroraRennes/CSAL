@@ -45,7 +45,7 @@ static unsigned int cs_cti_get_global_channels(cs_device_t cti)
     assert(d->type == DEV_CTI);
 
     _cs_unlock(d);
-    return _cs_read(d, CS_CTIGATE);
+    return _cs_read32(d, CS_CTIGATE);
 }
 
 /**
@@ -108,14 +108,14 @@ int cs_cti_enable(cs_device_t dev)
 {
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_CTI);
-    return _cs_set(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN);
+    return _cs_set32(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN);
 }
 
 int cs_cti_disable(cs_device_t dev)
 {
     struct cs_device *d = DEV(dev);
     assert(d->type == DEV_CTI);
-    return _cs_clear(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN);
+    return _cs_clear32(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN);
 }
 
 int cs_cti_set_trigin_channels(cs_device_t cti, unsigned int ctiport,
@@ -126,7 +126,7 @@ int cs_cti_set_trigin_channels(cs_device_t cti, unsigned int ctiport,
     assert(ctiport <= CTI_MAX_IN_PORTS);
 
     _cs_unlock(d);
-    return _cs_write(d, CS_CTIINEN(ctiport), mask);
+    return _cs_write32(d, CS_CTIINEN(ctiport), mask);
 }
 
 int cs_cti_set_trigout_channels(cs_device_t cti, unsigned int ctiport,
@@ -137,7 +137,7 @@ int cs_cti_set_trigout_channels(cs_device_t cti, unsigned int ctiport,
     assert(ctiport <= CTI_MAX_OUT_PORTS);
 
     _cs_unlock(d);
-    return _cs_write(d, CS_CTIOUTEN(ctiport), mask);
+    return _cs_write32(d, CS_CTIOUTEN(ctiport), mask);
 }
 
 int cs_cti_set_global_channels(cs_device_t cti, unsigned int mask)
@@ -146,7 +146,7 @@ int cs_cti_set_global_channels(cs_device_t cti, unsigned int mask)
     assert(d->type == DEV_CTI);
 
     _cs_unlock(d);
-    return _cs_write(d, CS_CTIGATE, mask);
+    return _cs_write32(d, CS_CTIGATE, mask);
 }
 
 
@@ -161,10 +161,10 @@ unsigned int cs_cti_used_channels(cs_device_t cti)
 
     assert(d->type == DEV_CTI);
     for (i = 0; i < d->v.cti.n_triggers; ++i) {
-        mask |= _cs_read(d, CS_CTIINEN(i));
+        mask |= _cs_read32(d, CS_CTIINEN(i));
     }
     for (i = 0; i < d->v.cti.n_triggers; ++i) {
-        mask |= _cs_read(d, CS_CTIOUTEN(i));
+        mask |= _cs_read32(d, CS_CTIOUTEN(i));
     }
     return mask;
 }
@@ -176,7 +176,7 @@ int cs_cti_pulse_channel(cs_device_t cti, unsigned int channel)
     assert(channel < d->v.cti.n_channels);
 
     _cs_unlock(d);
-    return _cs_write_wo(d, CS_CTIAPPPULSE, (1U << channel));
+    return _cs_write32_wo(d, CS_CTIAPPPULSE, (1U << channel));
 }
 
 int cs_cti_set_active_channel(cs_device_t cti, unsigned int channel)
@@ -186,7 +186,7 @@ int cs_cti_set_active_channel(cs_device_t cti, unsigned int channel)
     assert(channel < d->v.cti.n_channels);
 
     _cs_unlock(d);
-    return _cs_set(d, CS_CTIAPPSET, (0x1U << channel));
+    return _cs_set32(d, CS_CTIAPPSET, (0x1U << channel));
 }
 
 int cs_cti_clear_active_channel(cs_device_t cti, unsigned int channel)
@@ -196,7 +196,7 @@ int cs_cti_clear_active_channel(cs_device_t cti, unsigned int channel)
     assert(channel < d->v.cti.n_channels);
 
     _cs_unlock(d);
-    return _cs_set(d, CS_CTIAPPCLEAR, (0x1U << channel));
+    return _cs_set32(d, CS_CTIAPPCLEAR, (0x1U << channel));
 }
 
 int cs_cti_clear_all_active_channels(cs_device_t cti)
@@ -208,7 +208,7 @@ int cs_cti_clear_all_active_channels(cs_device_t cti)
 
     _cs_unlock(d);
     clear_mask = ((0x1U << d->v.cti.n_channels) - 1);
-    return _cs_set(d, CS_CTIAPPCLEAR, clear_mask);
+    return _cs_set32(d, CS_CTIAPPCLEAR, clear_mask);
 }
 
 unsigned int cs_cti_trigin_status(cs_device_t cti)
@@ -217,7 +217,7 @@ unsigned int cs_cti_trigin_status(cs_device_t cti)
     assert(d->type == DEV_CTI);
 
     _cs_unlock(d);
-    return _cs_read(d, CS_CTITRIGINSTATUS);
+    return _cs_read32(d, CS_CTITRIGINSTATUS);
 }
 
 unsigned int cs_cti_trigout_status(cs_device_t cti)
@@ -226,7 +226,7 @@ unsigned int cs_cti_trigout_status(cs_device_t cti)
     assert(d->type == DEV_CTI);
 
     _cs_unlock(d);
-    return _cs_read(d, CS_CTITRIGOUTSTATUS);
+    return _cs_read32(d, CS_CTITRIGOUTSTATUS);
 }
 
 int cs_cti_reset(cs_device_t cti)
@@ -237,18 +237,18 @@ int cs_cti_reset(cs_device_t cti)
     assert(d->type == DEV_CTI);
 
     _cs_unlock(d);
-    rc = _cs_clear(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN);
+    rc = _cs_clear32(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN);
     if (rc != 0) {
         return rc;
     }
     for (i = 0; i < d->v.cti.n_triggers; ++i) {
-        _cs_write(d, CS_CTIINEN(i), 0);
+        _cs_write32(d, CS_CTIINEN(i), 0);
     }
     for (i = 0; i < d->v.cti.n_triggers; ++i) {
-        _cs_write(d, CS_CTIOUTEN(i), 0);
+        _cs_write32(d, CS_CTIOUTEN(i), 0);
     }
     /* Enable channel interface propagation for all channels, as on reset */
-    return _cs_write(d, CS_CTIGATE, CTI_CHANNEL_MASK);
+    return _cs_write32(d, CS_CTIGATE, CTI_CHANNEL_MASK);
 }
 
 void cs_cti_diag(void)
@@ -264,15 +264,15 @@ void cs_cti_diag(void)
             diagf(" (cpu #%u)", d->affine_cpu);
         }
         diagf(" (%sabled)",
-              (_cs_isset(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN) ? "en" : "dis"));
+              (_cs_isset32(d, CS_CTICONTROL, CS_CTICONTROL_GLBEN) ? "en" : "dis"));
         diagf(":\n");
         /* Show static and dynamic configuration, and status */
-        sin = _cs_read(d, CS_CTITRIGINSTATUS);
-        sout = _cs_read(d, CS_CTITRIGOUTSTATUS);
-        cact = _cs_read(d, CS_CTIAPPSET);
-        cgate = _cs_read(d, CS_CTIGATE);
-        cin = _cs_read(d, CS_CTICHINSTATUS);
-        cout = _cs_read(d, CS_CTICHOUTSTATUS);
+        sin = _cs_read32(d, CS_CTITRIGINSTATUS);
+        sout = _cs_read32(d, CS_CTITRIGOUTSTATUS);
+        cact = _cs_read32(d, CS_CTIAPPSET);
+        cgate = _cs_read32(d, CS_CTIGATE);
+        cin = _cs_read32(d, CS_CTICHINSTATUS);
+        cout = _cs_read32(d, CS_CTICHOUTSTATUS);
 
         diagf("  TIN=%02X TOUT=%02X CIN=%02X COUT=%02X CACTIVE=%02X CGATE=%02X\n",
               sin, sout, cin, cout, cact, cgate);
@@ -282,12 +282,12 @@ void cs_cti_diag(void)
             for (i = 0; i < d->v.cti.n_channels; ++i) {
                 diagf("    #%u:", i);
                 for (j = 0; j < d->v.cti.n_triggers; ++j) {
-                    if (_cs_isset(d, CS_CTIINEN(j), (1U << i)))
+                    if (_cs_isset32(d, CS_CTIINEN(j), (1U << i)))
                         diagf(" %u", j);
                 }
                 diagf(" ->");
                 for (j = 0; j < d->v.cti.n_triggers; ++j) {
-                    if (_cs_isset(d, CS_CTIOUTEN(j), (1U << i)))
+                    if (_cs_isset32(d, CS_CTIOUTEN(j), (1U << i)))
                         diagf(" %u", j);
                 }
                 if ((cin & (1U << i)) != 0)
@@ -306,7 +306,7 @@ void cs_cti_diag(void)
 
         diagf("  incoming triggers (%u):\n", d->v.cti.n_triggers);
         for (i = 0; i < d->v.cti.n_triggers; ++i) {
-            unsigned int chans = _cs_read(d, CS_CTIINEN(i));
+            unsigned int chans = _cs_read32(d, CS_CTIINEN(i));
             int is_active = (sin & (1U << i)) != 0;
             struct cs_device *dev = d->v.cti.src[i].dev;
             if (dev == NULL && chans == 0 && !is_active) {
@@ -328,7 +328,7 @@ void cs_cti_diag(void)
         }
         diagf("  outgoing triggers (%u):\n", d->v.cti.n_triggers);
         for (i = 0; i < d->v.cti.n_triggers; ++i) {
-            unsigned int chans = _cs_read(d, CS_CTIOUTEN(i));
+            unsigned int chans = _cs_read32(d, CS_CTIOUTEN(i));
             int is_active = (sout & (1U << i)) != 0;
             struct cs_device *dev = d->v.cti.dst[i].dev;
             if (dev == NULL && chans == 0 && !is_active) {
@@ -547,7 +547,7 @@ int cs_ect_configure(cs_channel_t chandesc)
            off at this CTI. */
         channo = chans & (0U - chans);
         /* Gate off the channel, to make it local to this CTI */
-        _cs_clear(cti, CS_CTIGATE, channo);
+        _cs_clear32(cti, CS_CTIGATE, channo);
     } else {
         /* Channel request spans multiple CTIs and will need to use the global
            cross-trigger matrix.  We need to find a channel number that is not
@@ -588,11 +588,11 @@ int cs_ect_configure(cs_channel_t chandesc)
 
     /* Program the requested sources and destinations */
     for (i = 0; i < c->n_src; ++i) {
-        _cs_set(DEV(c->sources[i].cti), CS_CTIINEN(c->sources[i].ctiport),
+        _cs_set32(DEV(c->sources[i].cti), CS_CTIINEN(c->sources[i].ctiport),
                 channo);
     }
     for (i = 0; i < c->n_dst; ++i) {
-        _cs_set(DEV(c->dests[i].cti), CS_CTIOUTEN(c->dests[i].ctiport),
+        _cs_set32(DEV(c->dests[i].cti), CS_CTIOUTEN(c->dests[i].ctiport),
                 channo);
     }
     for (i = 0; i < c->n_cti; ++i) {

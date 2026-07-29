@@ -211,7 +211,7 @@ struct cs_device *cs_device_new(cs_physaddr_t addr,
  *
  * This is not used with MEM-AP and/or devmemd.
  */
-uint32_t volatile *_cs_get_register_address(struct cs_device *d,
+uint32_t volatile *_cs_get_register_address32(struct cs_device *d,
                                             unsigned int off)
 {
     assert((off & 3) == 0); /* For 64-bit registers this check should be stronger */
@@ -233,12 +233,12 @@ uint32_t volatile *_cs_get_register_address(struct cs_device *d,
 #else
     (void)off;
     (void)d;     /* No direct access to registers when using devmemd */
-    return NULL; /* Caller must fall back to _cs_read/_cs_write */
+    return NULL; /* Caller must fall back to _cs_read32/_cs_write32 */
 #endif
 }
 
 
-uint32_t _cs_read(struct cs_device *d, unsigned int off)
+uint32_t _cs_read32(struct cs_device *d, unsigned int off)
 {
     uint32_t data;
     assert((off & 3) == 0);
@@ -302,7 +302,7 @@ done:
   - writing the key to lock-registers when locked
   - S/W stimulus ports for STM (usable when the STM programming page is locked)
 */
-int _cs_write_wo(struct cs_device *d, unsigned int off, uint32_t data)
+int _cs_write32_wo(struct cs_device *d, unsigned int off, uint32_t data)
 {
     assert((off & 3) == 0);
     assert(off < 4096);
@@ -339,8 +339,8 @@ int _cs_write64_wo(struct cs_device *d, unsigned int off, uint64_t data)
 }
 
 
-int _cs_write_wo_traced(struct cs_device *d, unsigned int off,
-                        uint32_t data, char const *oname)
+int _cs_write32_wo_traced(struct cs_device *d, unsigned int off,
+                          uint32_t data, char const *oname)
 {
     if (DTRACE(d) >= DIAG_TRACE_REGISTERS) {
         diagf("!%" CS_PHYSFMT ": write %03X (%s) = %08X\n",
@@ -352,18 +352,18 @@ int _cs_write_wo_traced(struct cs_device *d, unsigned int off,
                   d->phys_addr, off, oname);
         }
     }
-    return _cs_write_wo(d, off, data);
+    return _cs_write32_wo(d, off, data);
 }
 
 
-int _cs_write_traced(struct cs_device *d, unsigned int off,
-                     uint32_t data, char const *oname)
+int _cs_write32_traced(struct cs_device *d, unsigned int off,
+                       uint32_t data, char const *oname)
 {
-    _cs_write_wo_traced(d, off, data, oname);
+    _cs_write32_wo_traced(d, off, data, oname);
     if (DCHECK(d)) {
         /* Read the data back */
         uint32_t ndata;
-        ndata = _cs_read(d, off);
+        ndata = _cs_read32(d, off);
         if (ndata != data) {
             diagf("!%" CS_PHYSFMT ": write %03X (%s) = %08X now %08X\n",
                   d->phys_addr, off, oname, data, ndata);
@@ -402,16 +402,16 @@ int _cs_write64_traced(struct cs_device *d, unsigned int off,
     return 0;
 }
 
-int _cs_set_mask(struct cs_device *d, unsigned int off,
+int _cs_set32_mask(struct cs_device *d, unsigned int off,
                  uint32_t mask, uint32_t data)
 {
     uint32_t nword;
-    uint32_t const word = _cs_read(d, off);
+    uint32_t const word = _cs_read32(d, off);
     /* Check caller is not trying to set any bits outside their mask */
     assert((data & ~mask) == 0);
     nword = (word & ~mask) | data;
     if (G.force_writes || nword != word) {
-        return _cs_write(d, off, nword);
+        return _cs_write32(d, off, nword);
     } else {
         if (DTRACE(d)) {
             diagf("!%" CS_PHYSFMT
@@ -423,46 +423,46 @@ int _cs_set_mask(struct cs_device *d, unsigned int off,
     }
 }
 
-int _cs_write_mask(struct cs_device *d, unsigned int off,
-                   uint32_t mask, uint32_t data)
+int _cs_write32_mask(struct cs_device *d, unsigned int off,
+                     uint32_t mask, uint32_t data)
 {
     uint32_t nword;
-    uint32_t const word = _cs_read(d, off);
+    uint32_t const word = _cs_read32(d, off);
     nword = (word & ~mask) | (data & mask);
-    return _cs_write(d, off, nword);
+    return _cs_write32(d, off, nword);
 }
 
-int _cs_set_bit(struct cs_device *d, unsigned int off, uint32_t mask,
+int _cs_set32_bit(struct cs_device *d, unsigned int off, uint32_t mask,
                 int value)
 {
-    return _cs_set_mask(d, off, mask, value ? mask : 0);
+    return _cs_set32_mask(d, off, mask, value ? mask : 0);
 }
 
-int _cs_set(struct cs_device *d, unsigned int off, uint32_t bits)
+int _cs_set32(struct cs_device *d, unsigned int off, uint32_t bits)
 {
-    return _cs_set_mask(d, off, bits, bits);
+    return _cs_set32_mask(d, off, bits, bits);
 }
 
-int _cs_set_wo(struct cs_device *d, unsigned int off, uint32_t bits)
+int _cs_set32_wo(struct cs_device *d, unsigned int off, uint32_t bits)
 {
-    return _cs_write_wo(d, off, (_cs_read(d, off) | bits));
+    return _cs_write32_wo(d, off, (_cs_read32(d, off) | bits));
 }
 
-int _cs_clear(struct cs_device *d, unsigned int off, uint32_t bits)
+int _cs_clear32(struct cs_device *d, unsigned int off, uint32_t bits)
 {
-    return _cs_set_mask(d, off, bits, 0);
+    return _cs_set32_mask(d, off, bits, 0);
 }
 
-int _cs_isset(struct cs_device *d, unsigned int off, uint32_t bits)
+int _cs_isset32(struct cs_device *d, unsigned int off, uint32_t bits)
 {
-    return (_cs_read(d, off) & bits) == bits;
+    return (_cs_read32(d, off) & bits) == bits;
 }
 
-int _cs_wait(struct cs_device *d, unsigned int off, uint32_t bits)
+int _cs_wait32(struct cs_device *d, unsigned int off, uint32_t bits)
 {
     int i;
     for (i = 0; i < wait_iterations; ++i) {
-        if (_cs_isset(d, off, bits)) {
+        if (_cs_isset32(d, off, bits)) {
             if (DTRACE(d)) {
                 diagf("!%" CS_PHYSFMT ": bit %03X.%08" PRIX32 " set after %d iterations\n",
                       d->phys_addr, off, bits, i);
@@ -474,11 +474,11 @@ int _cs_wait(struct cs_device *d, unsigned int off, uint32_t bits)
                                   off, bits);
 }
 
-int _cs_waitnot(struct cs_device *d, unsigned int off, uint32_t bits)
+int _cs_waitnot32(struct cs_device *d, unsigned int off, uint32_t bits)
 {
     int i;
     for (i = 0; i < wait_iterations; ++i) {
-        if (!_cs_isset(d, off, bits)) {
+        if (!_cs_isset32(d, off, bits)) {
             if (DTRACE(d)) {
                 diagf("!%" CS_PHYSFMT ": bit %03X.%08" PRIX32 " clear after %d iterations\n",
                       d->phys_addr, off, bits, i);
@@ -495,7 +495,7 @@ void _cs_set_wait_iterations(int iterations)
     wait_iterations = iterations;
 }
 
-int _cs_waitbits(struct cs_device *d, unsigned int off, uint32_t bits,
+int _cs_waitbits32(struct cs_device *d, unsigned int off, uint32_t bits,
                  cs_reg_waitbits_op_t operation, uint32_t pattern,
                  uint32_t *p_last_val)
 {
@@ -510,7 +510,7 @@ int _cs_waitbits(struct cs_device *d, unsigned int off, uint32_t bits,
             "waitbits(CS_REG_WAITBITS_PTTRN): bits %03X.%08X failed to match pattern %08X\n"};
 
     for (i = 0; i < wait_iterations; ++i) {
-        regval = _cs_read(d, off);
+        regval = _cs_read32(d, off);
         switch (operation) {
         case CS_REG_WAITBITS_ALL_1:
             if ((regval & bits) == bits) {
@@ -597,12 +597,12 @@ int _cs_waitbits(struct cs_device *d, unsigned int off, uint32_t bits,
 
 int _cs_claim_tag(struct cs_device *d, uint32_t bit)
 {
-    return _cs_write_wo_traced(d, CS_CLAIMSET, bit, "CLAIMSET");
+    return _cs_write32_wo_traced(d, CS_CLAIMSET, bit, "CLAIMSET");
 }
 
 int _cs_unclaim_tag(struct cs_device *d, uint32_t bit)
 {
-    return _cs_write_wo_traced(d, CS_CLAIMCLR, bit, "CLAIMCLR");
+    return _cs_write32_wo_traced(d, CS_CLAIMCLR, bit, "CLAIMCLR");
 }
 
 /*
@@ -611,14 +611,14 @@ int _cs_unclaim_tag(struct cs_device *d, uint32_t bit)
 */
 int _cs_isclaimed_tag(struct cs_device *d, uint32_t bit)
 {
-    return _cs_isset(d, CS_CLAIMCLR, bit);
+    return _cs_isset32(d, CS_CLAIMCLR, bit);
 }
 
 
 /* Return true if a device is unlocked (where the lock is implemented) */
 int _cs_isunlocked(struct cs_device *d)
 {
-    return (_cs_read(d, CS_LSR) & (CS_LSR_SLI | CS_LSR_SLK)) == CS_LSR_SLI;
+    return (_cs_read32(d, CS_LSR) & (CS_LSR_SLI | CS_LSR_SLK)) == CS_LSR_SLI;
 }
 
 
@@ -631,11 +631,11 @@ int _cs_is_lockable(struct cs_device *d)
 int _cs_unlock(struct cs_device *d)
 {
     if (!d->is_unlocked) {
-        _cs_write_wo_traced(d, CS_LAR, CS_KEY, "LAR");
+        _cs_write32_wo_traced(d, CS_LAR, CS_KEY, "LAR");
         d->is_unlocked = 1;
     }
     if (DCHECK(d)) {
-        uint32_t lsr = _cs_read(d, CS_LSR);
+        uint32_t lsr = _cs_read32(d, CS_LSR);
         if ((lsr & 3) == 3) {
             /* Implemented (bit 0) and still locked (bit 1) */
             diagf("!%" CS_PHYSFMT ": after unlock, LSR=%08" PRIX32 "\n", d->phys_addr, lsr);
@@ -652,11 +652,11 @@ int _cs_lock(struct cs_device *d)
         return -1;
     }
     if (d->is_unlocked) {
-        _cs_write_wo_traced(d, CS_LAR, 0, "LAR");
+        _cs_write32_wo_traced(d, CS_LAR, 0, "LAR");
         d->is_unlocked = 0;
     }
     if (DCHECK(d)) {
-        uint32_t lsr = _cs_read(d, CS_LSR);
+        uint32_t lsr = _cs_read32(d, CS_LSR);
         if ((lsr & (CS_LSR_SLI | CS_LSR_SLK)) == CS_LSR_SLI) {
             /* Implemented (bit 0) but not locked (bit 1) */
             diagf("!%" CS_PHYSFMT ": after lock, LSR=%08" PRIX32 "\n",

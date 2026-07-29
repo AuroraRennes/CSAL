@@ -215,10 +215,10 @@ int _cs_unclaim(struct cs_device *d)
 int _cs_device_is_powered(struct cs_device *d)
 {
     if (cs_device_has_class(d, CS_DEVCLASS_DEBUG)) {
-        uint32_t edprsr = _cs_read(d, CS_DBGPRSR);
+        uint32_t edprsr = _cs_read32(d, CS_DBGPRSR);
         return (edprsr & 1) == 1;
     } else if (cs_device_has_class(d, CS_DEVCLASS_SOURCE | CS_DEVCLASS_CPU)) {
-        uint32_t edpdsr = _cs_read(d, CS_ETMPDSR);
+        uint32_t edpdsr = _cs_read32(d, CS_ETMPDSR);
         return (edpdsr & 1) == 1;
     } else {
         return CS_POWER_UNKNOWN;
