@@ -192,7 +192,15 @@ int cs_sink_enable(cs_device_t dev)
             flfmt |= CS_ETB_FLFMT_CTRL_StopFl;
         }
         _cs_set(d, CS_ETB_FLFMT_CTRL, flfmt);
-        return _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+        rc = _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
+        if (rc != 0) {
+            return rc;
+        }
+        /* Wait until the state machine reaches Running (TMCReady deasserts). */
+        if (d->v.etb.is_tmc_device) {
+            return _cs_waitnot(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+        }
+        return 0;
     } else if(d -> type ==  DEV_TPIU){
         _cs_wait(d, CS_TPIU_FLFMT_STATUS, CS_TPIU_FLFMT_STATUS_FtStopped);
         _cs_write_wo(d, CS_TPIU_CPORTSIZE, 1 << 31);  /* 32-bit port */
@@ -703,9 +711,8 @@ int cs_tmc_hw_fifo_enable(cs_device_t dev, unsigned int bufwm)
 
   int rc = _cs_write(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
   if (rc != 0) return rc;
-  /* Wait until sink is actively capturing — TMCReady deasserts */
-  _cs_waitnot(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
-  return 0;
+  /* Wait until sink is actively capturing — TMCReady deasserts. */
+  return _cs_waitnot(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
 }
 
 int cs_tmc_hw_fifo_disable(cs_device_t dev){
@@ -720,12 +727,14 @@ int cs_tmc_hw_fifo_disable(cs_device_t dev){
   _cs_unlock(d);
   /* Set to stop on flush event. */
   _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_StopFl);
-  /* Flush the trace data remaining in fifo. */
-  _cs_set(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
+  /* Flush the trace data remaining in fifo.
+   * FOnMan is a self-clearing trigger bit: use _cs_set_wo (write-only). */
+  _cs_set_wo(d, CS_ETB_FLFMT_CTRL, CS_ETB_FLFMT_CTRL_FOnMan);
   /* Now in Stopping: Wait until TMCReady is equal to one. This indicates that the trace session is over. */
-  _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
-  /* "Disable trace capture" by unsetting TraceCaptEn */
-  return _cs_write(d, CS_ETB_CTRL, 0x0);
+  int rc = _cs_wait(d, CS_ETB_STATUS, CS_TMC_STATUS_TMCReady);
+  /* Always clear TraceCaptEn even if the wait timed out. */
+  _cs_write(d, CS_ETB_CTRL, 0x0);
+  return rc;
 }
 
 void dump_tmc_config(cs_device_t * dev){
