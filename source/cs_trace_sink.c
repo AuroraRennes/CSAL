@@ -125,6 +125,13 @@ int cs_sink_etr_setup(cs_device_t dev, unsigned long hwaddr, size_t size,
     _cs_write(d, CS_ETB_AXICTL, axictl);
     _cs_write(d, CS_TMC_DBALO, (hwaddr & 0xffffffff));
     _cs_write(d, CS_TMC_DBAHI, ((hwaddr >> 32) & 0xffffffff));
+
+    /* Reset write pointer to base address. The low 32 bits
+       share the common ETB/TMC write-pointer register
+       (0x018); CS_TMC_RWPHI (0x03C) is the ETR-only high half. */
+    _cs_write(d, CS_ETB_RAM_WR_PTR, (hwaddr & 0xffffffff));
+    _cs_write(d, CS_TMC_RWPHI, ((hwaddr >> 32) & 0xffffffff));
+
     /* Stop on a Flush operation.  For a TMC ETB we don't want to go straight
        from Running to Disabled, instead we want to Stop the ETB first,
        then read the data, then disable for reprogramming. */
@@ -398,10 +405,10 @@ int cs_get_trace_data(cs_device_t dev, void *buf, unsigned int size)
     } else {
         unread = cs_get_buffer_unread_bytes(dev);
         /* We now need to write the RAM read pointer in order to trigger a
-           RAM access cycle and load the data into the RAM read register. */
-        if (_cs_read(d, CS_ETB_RAM_RD_PTR) == 0) {
-            _cs_write(d, CS_ETB_RAM_RD_PTR, 0);
-        }
+           RAM access cycle and load the data into the RAM read register.
+           Rewrite the pointer's own current value unconditionally to the
+           read pointer. */
+        _cs_write(d, CS_ETB_RAM_RD_PTR, _cs_read(d, CS_ETB_RAM_RD_PTR));
     }
     d->v.etb.currently_reading = 1;
 
@@ -510,9 +517,21 @@ int cs_empty_trace_buffer(cs_device_t dev)
 {
     int rc;
     struct cs_device *d = DEV(dev);
+    /* For a TMC configured as ETR, the read/write pointers hold an
+       absolute AXI system-memory address and are reset to CS_TMC_DBA*
+       as the base and high address */
+    int is_etr = d->v.etb.is_tmc_device &&
+                 d->v.etb.tmc.config_type == CS_TMC_CONFIG_TYPE_ETR;
+    unsigned int wr_reset_lo = 0x00000000;
+    unsigned int wr_reset_hi = 0x00000000;
     assert(cs_device_has_class(dev, CS_DEVCLASS_BUFFER));
 
     _cs_unlock(d);
+
+    if (is_etr) {
+        wr_reset_lo = _cs_read(d, CS_TMC_DBALO);
+        wr_reset_hi = _cs_read(d, CS_TMC_DBAHI);
+    }
 
     /* The buffer must not currently be capturing. */
     if (!d->v.etb.is_tmc_device) {
@@ -551,7 +570,10 @@ int cs_empty_trace_buffer(cs_device_t dev)
                                               status, flstat);
             }
             /* Set the write pointer to the start as we don't want to wrap again */
-            _cs_write(d, CS_ETB_RAM_WR_PTR, 0x00000000);
+            _cs_write(d, CS_ETB_RAM_WR_PTR, wr_reset_lo);
+            if (is_etr) {
+                _cs_write(d, CS_TMC_RWPHI, wr_reset_hi);
+            }
             _cs_set(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
             /* We're now capturing trace, hopefully briefly. */
             _cs_clear(d, CS_ETB_CTRL, CS_ETB_CTRL_TraceCaptEn);
@@ -563,11 +585,17 @@ int cs_empty_trace_buffer(cs_device_t dev)
             _cs_write(d, CS_ETB_FLFMT_CTRL, flc);
         }
     }
-    _cs_write(d, CS_ETB_RAM_WR_PTR, 0x00000000);
+    _cs_write(d, CS_ETB_RAM_WR_PTR, wr_reset_lo);
+    if (is_etr) {
+        _cs_write(d, CS_TMC_RWPHI, wr_reset_hi);
+    }
     /* We might as well program the read pointer here as an indicator that
        we aren't part-way through a buffer read.  But when we do read out,
        we need to write the read pointer again to trigger a RAM access. */
-    rc = _cs_write(d, CS_ETB_RAM_RD_PTR, 0x00000000);
+    rc = _cs_write(d, CS_ETB_RAM_RD_PTR, wr_reset_lo);
+    if (is_etr) {
+        _cs_write(d, CS_TMC_RRPHI, wr_reset_hi);
+    }
     assert(cs_get_buffer_unread_bytes(dev) == 0);
     /* Buffer is empty so we're not reading anything. */
     d->v.etb.finished_reading = 0;
