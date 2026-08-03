@@ -134,8 +134,7 @@ int cs_shutdown(void)
 {
     if (G.init_called) {
         /* Do anything that needs memory-mapped access */
-        // FIXME: Empty devices try to claim back tag, breaking on this function
-        // cs_release();      /* claim tags released here */
+        cs_release();      /* claim tags released here */
         cs_checkpoint();
 #ifdef UNIX_USERSPACE
         /* Now remove memory-mapped access */
@@ -206,6 +205,14 @@ int cs_release(void)
        and cross-triggering, not necessarily CPU hardware breakpoints). */
     struct cs_device *d;
     for (d = G.device_top; d != NULL; d = d->next) {
+        /* Skip devices with no register mapping (phys_addr ==
+           CS_NO_PHYS_ADDR), e.g. the replicators created by
+           cs_atb_add_replicator(). They hold no claim tag, and probing
+           one dereferences a mapping that was never made.
+           cs_checkpoint() applies the same guard. */
+        if (cs_device_is_non_mmio(d)) {
+            continue;
+        }
         /* Get the appropriate tag bit for this device type. */
         uint32_t const tag = _cs_device_internal_claim_tag(d);
         /* For certain devices, we might have been able to create
